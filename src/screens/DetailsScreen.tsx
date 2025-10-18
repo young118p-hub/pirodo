@@ -1,0 +1,387 @@
+/**
+ * 상세 분석 화면
+ */
+
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import {useFatigue} from '../contexts/FatigueContext';
+import {ACTIVITY_TYPE_INFO} from '../utils/constants';
+import {ActivityType} from '../types';
+
+interface DetailsScreenProps {
+  navigation: any;
+}
+
+const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
+  const {dailyData, removeActivity, clearAllActivities} = useFatigue();
+
+  const handleDeleteActivity = (activityId: string, activityName: string) => {
+    Alert.alert(
+      '삭제 확인',
+      `"${activityName}" 활동을 삭제하시겠습니까?`,
+      [
+        {text: '취소', style: 'cancel'},
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => removeActivity(activityId),
+        },
+      ],
+    );
+  };
+
+  const handleClearAll = () => {
+    Alert.alert(
+      '전체 삭제',
+      '모든 활동을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      [
+        {text: '취소', style: 'cancel'},
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: clearAllActivities,
+        },
+      ],
+    );
+  };
+
+  // 활동 타입별 그룹화 및 합계
+  const activitySummary = Object.values(ActivityType).map(type => {
+    const activities = dailyData.activities.filter(a => a.type === type);
+    const totalMinutes = activities.reduce((sum, a) => sum + a.durationMinutes, 0);
+    const info = ACTIVITY_TYPE_INFO[type];
+
+    return {
+      type,
+      info,
+      totalMinutes,
+      count: activities.length,
+      activities,
+    };
+  }).filter(item => item.count > 0);
+
+  // 피로/회복 활동 분리
+  const fatigueActivities = activitySummary.filter(item => !item.info.isRecovery);
+  const recoveryActivities = activitySummary.filter(item => item.info.isRecovery);
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return mins > 0 ? `${hours}시간 ${mins}분` : `${hours}시간`;
+    }
+    return `${mins}분`;
+  };
+
+  const formatTime = (date: Date) => {
+    return new Date(date).toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.content}>
+        {/* 통계 헤더 */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{dailyData.activities.length}</Text>
+            <Text style={styles.statLabel}>총 활동</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{fatigueActivities.length}</Text>
+            <Text style={styles.statLabel}>피로 활동</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{recoveryActivities.length}</Text>
+            <Text style={styles.statLabel}>회복 활동</Text>
+          </View>
+        </View>
+
+        {/* 피로 증가 활동 */}
+        {fatigueActivities.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>피로 증가 활동</Text>
+            {fatigueActivities.map(item => (
+              <View key={item.type} style={styles.activityTypeCard}>
+                <View style={styles.activityTypeHeader}>
+                  <View style={styles.activityTypeInfo}>
+                    <Text style={styles.activityTypeEmoji}>{item.info.emoji}</Text>
+                    <View>
+                      <Text style={styles.activityTypeName}>
+                        {item.info.displayName}
+                      </Text>
+                      <Text style={styles.activityTypeSummary}>
+                        {formatDuration(item.totalMinutes)} • {item.count}회
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* 개별 활동 목록 */}
+                {item.activities.map(activity => (
+                  <View key={activity.id} style={styles.activityItem}>
+                    <View style={styles.activityItemInfo}>
+                      <Text style={styles.activityTime}>
+                        {formatTime(activity.timestamp)}
+                      </Text>
+                      <Text style={styles.activityDuration}>
+                        {formatDuration(activity.durationMinutes)}
+                      </Text>
+                      {activity.note && (
+                        <Text style={styles.activityNote}>{activity.note}</Text>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() =>
+                        handleDeleteActivity(activity.id, item.info.displayName)
+                      }>
+                      <Text style={styles.deleteButtonText}>삭제</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* 회복 활동 */}
+        {recoveryActivities.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>회복 활동</Text>
+            {recoveryActivities.map(item => (
+              <View key={item.type} style={[styles.activityTypeCard, styles.recoveryCard]}>
+                <View style={styles.activityTypeHeader}>
+                  <View style={styles.activityTypeInfo}>
+                    <Text style={styles.activityTypeEmoji}>{item.info.emoji}</Text>
+                    <View>
+                      <Text style={styles.activityTypeName}>
+                        {item.info.displayName}
+                      </Text>
+                      <Text style={styles.activityTypeSummary}>
+                        {formatDuration(item.totalMinutes)} • {item.count}회
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* 개별 활동 목록 */}
+                {item.activities.map(activity => (
+                  <View key={activity.id} style={styles.activityItem}>
+                    <View style={styles.activityItemInfo}>
+                      <Text style={styles.activityTime}>
+                        {formatTime(activity.timestamp)}
+                      </Text>
+                      <Text style={styles.activityDuration}>
+                        {formatDuration(activity.durationMinutes)}
+                      </Text>
+                      {activity.note && (
+                        <Text style={styles.activityNote}>{activity.note}</Text>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() =>
+                        handleDeleteActivity(activity.id, item.info.displayName)
+                      }>
+                      <Text style={styles.deleteButtonText}>삭제</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* 활동 없음 */}
+        {dailyData.activities.length === 0 && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyEmoji}>📝</Text>
+            <Text style={styles.emptyText}>아직 기록된 활동이 없습니다</Text>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => navigation.navigate('AddActivity')}>
+              <Text style={styles.addButtonText}>활동 추가하기</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* 전체 삭제 버튼 */}
+        {dailyData.activities.length > 0 && (
+          <TouchableOpacity
+            style={styles.clearAllButton}
+            onPress={handleClearAll}>
+            <Text style={styles.clearAllButtonText}>전체 삭제</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  content: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 30,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statNumber: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 5,
+  },
+  section: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+  },
+  activityTypeCard: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  recoveryCard: {
+    backgroundColor: '#F0F8FF',
+  },
+  activityTypeHeader: {
+    marginBottom: 10,
+  },
+  activityTypeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activityTypeEmoji: {
+    fontSize: 32,
+    marginRight: 15,
+  },
+  activityTypeName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  activityTypeSummary: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
+  },
+  activityItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  activityItemInfo: {
+    flex: 1,
+  },
+  activityTime: {
+    fontSize: 14,
+    color: '#666',
+  },
+  activityDuration: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 2,
+  },
+  activityNote: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  deleteButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: '#FFE0E0',
+    borderRadius: 8,
+  },
+  deleteButtonText: {
+    color: '#F44336',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyEmoji: {
+    fontSize: 64,
+    marginBottom: 20,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 30,
+  },
+  addButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 12,
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  clearAllButton: {
+    backgroundColor: '#FFE0E0',
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  clearAllButtonText: {
+    color: '#F44336',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
+
+export default DetailsScreen;

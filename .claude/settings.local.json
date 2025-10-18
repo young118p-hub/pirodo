@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init)",
+      "Bash(git remote add origin https://github.com/young118p-hub/pirodo.git)",
+      "Bash(mkdir -p app/src/main/java/com/pirodo)",
+      "Bash(mkdir -p app/src/main/res/values)",
+      "Bash(mkdir -p app/src/main/res/drawable)",
+      "Bash(mkdir -p gradle/wrapper)",
+      "Bash(npm install)",
+      "Bash(git add .)",
+      "Bash(git commit -m \"보안취약점 확인하기\")",
+      "Bash(git push -u origin master)",
+      "Bash(git config --global user.email \"young118p@gmail.com\")",
+      "Bash(git config --global user.name \"eden\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
