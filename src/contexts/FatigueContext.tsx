@@ -75,13 +75,38 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
         const parsed = JSON.parse(stored);
         const today = new Date().toISOString().split('T')[0];
 
+        // 데이터 검증: 필수 필드 확인
+        if (
+          !parsed ||
+          typeof parsed !== 'object' ||
+          !parsed.date ||
+          !Array.isArray(parsed.activities)
+        ) {
+          console.warn('Invalid stored data format, resetting...');
+          resetDailyData();
+          return;
+        }
+
         // 저장된 날짜가 오늘이 아니면 초기화
         if (parsed.date === today) {
-          // timestamp를 Date 객체로 변환
-          const activities = parsed.activities.map((a: any) => ({
-            ...a,
-            timestamp: new Date(a.timestamp),
-          }));
+          // timestamp를 Date 객체로 변환 및 활동 데이터 검증
+          const activities = parsed.activities
+            .filter((a: any) => {
+              // 필수 필드 검증
+              return (
+                a &&
+                typeof a === 'object' &&
+                a.id &&
+                a.type &&
+                typeof a.durationMinutes === 'number' &&
+                a.durationMinutes >= 0 &&
+                a.timestamp
+              );
+            })
+            .map((a: any) => ({
+              ...a,
+              timestamp: new Date(a.timestamp),
+            }));
           setDailyData({...parsed, activities});
         } else {
           resetDailyData();
@@ -89,6 +114,8 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
       }
     } catch (error) {
       console.error('Failed to load data:', error);
+      // JSON 파싱 실패 시 초기화
+      resetDailyData();
     } finally {
       setIsLoading(false);
     }

@@ -12,7 +12,13 @@
       "Bash(git commit -m \"보안취약점 확인하기\")",
       "Bash(git push -u origin master)",
       "Bash(git config --global user.email \"young118p@gmail.com\")",
-      "Bash(git config --global user.name \"eden\")"
+      "Bash(git config --global user.name \"eden\")",
+      "Bash(npm audit fix)",
+      "Bash(npm audit fix --force)",
+      "Bash(npm audit)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run lint)",
+      "Bash(git commit -m \"$(cat <<''EOF''\n보안 취약점 수정 및 입력 검증 강화\n\n- React Native 0.73.2 → 0.73.11 업데이트로 IP 패키지 SSRF 취약점 해결\n- 시간 입력 검증 추가 (최대 24시간, 분 0-59 범위 제한)\n- AsyncStorage 데이터 검증 로직 추가 (손상된 데이터로 인한 크래시 방지)\n- TypeScript 설정 수정 (moduleResolution: node16)\n\n보안 개선 사항:\n- npm audit 취약점 5개 모두 해결 (0 vulnerabilities)\n- NaN, 음수, 비정상적인 시간 입력 방지\n- JSON 파싱 실패 시 안전한 fallback 처리\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

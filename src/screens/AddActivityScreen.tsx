@@ -33,10 +33,40 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
       return;
     }
 
-    const totalMinutes = parseInt(hours || '0') * 60 + parseInt(minutes || '0');
+    const hoursNum = parseInt(hours || '0');
+    const minutesNum = parseInt(minutes || '0');
+
+    // 입력값 검증
+    if (isNaN(hoursNum) || isNaN(minutesNum)) {
+      Alert.alert('알림', '올바른 숫자를 입력해주세요.');
+      return;
+    }
+
+    if (hoursNum < 0 || minutesNum < 0) {
+      Alert.alert('알림', '시간은 0 이상이어야 합니다.');
+      return;
+    }
+
+    if (hoursNum > 24) {
+      Alert.alert('알림', '하루는 24시간입니다. 24시간 이하로 입력해주세요.');
+      return;
+    }
+
+    if (minutesNum >= 60) {
+      Alert.alert('알림', '분은 0-59 사이로 입력해주세요.');
+      return;
+    }
+
+    const totalMinutes = hoursNum * 60 + minutesNum;
 
     if (totalMinutes <= 0) {
       Alert.alert('알림', '시간을 입력해주세요.');
+      return;
+    }
+
+    if (totalMinutes > 1440) {
+      // 24시간 = 1440분
+      Alert.alert('알림', '하루는 24시간(1440분)입니다.');
       return;
     }
 
