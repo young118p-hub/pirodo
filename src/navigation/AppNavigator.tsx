@@ -8,11 +8,13 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
 import AddActivityScreen from '../screens/AddActivityScreen';
 import DetailsScreen from '../screens/DetailsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 export type RootStackParamList = {
   Home: undefined;
   AddActivity: undefined;
   Details: undefined;
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -52,6 +54,13 @@ const AppNavigator: React.FC = () => {
           component={DetailsScreen}
           options={{
             title: '상세 보기',
+          }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            title: '설정',
           }}
         />
       </Stack.Navigator>

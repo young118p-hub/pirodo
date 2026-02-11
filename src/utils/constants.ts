@@ -2,7 +2,7 @@
  * 앱 상수 정의
  */
 
-import {ActivityType, ActivityTypeInfo, FatigueLevel, FatigueLevelInfo} from '../types';
+import {ActivityType, ActivityTypeInfo, FatigueLevel, FatigueLevelInfo, InputMode} from '../types';
 
 /**
  * 활동 타입별 정보
@@ -144,4 +144,60 @@ export const RECOMMENDED = {
   SCREEN_HOURS: 4,
   EXERCISE_MINUTES: 30,
   WATER_GLASSES: 8,
+};
+
+/**
+ * 건강 데이터 기반 피로도 가중치
+ */
+export const HEALTH_WEIGHTS = {
+  SEDENTARY_PER_HOUR: 10,
+  SCREEN_TIME_PER_HOUR: 5,
+  STEP_GOAL: 8000,
+  SLEEP_OPTIMAL_MIN: 7,
+  SLEEP_OPTIMAL_MAX: 9,
+  HR_RESTING_HIGH: 80,
+  HR_RESTING_LOW: 60,
+  HRV_GOOD: 50,
+  HRV_POOR: 30,
+};
+
+/**
+ * 입력 모드별 정보
+ */
+export const INPUT_MODE_INFO: Record<InputMode, {
+  displayName: string;
+  emoji: string;
+  description: string;
+  dataSources: string[];
+}> = {
+  [InputMode.WATCH]: {
+    displayName: '스마트워치',
+    emoji: '⌚',
+    description: 'Apple Watch / Galaxy Watch 데이터로 자동 측정',
+    dataSources: ['심박수', 'HRV', '수면 단계', '걸음수', '스트레스'],
+  },
+  [InputMode.PHONE]: {
+    displayName: '폰 센서',
+    emoji: '📱',
+    description: '폰 내장 센서와 건강 앱으로 자동 측정',
+    dataSources: ['걸음수', '수면 추정', '스크린타임', '앉아있기 감지'],
+  },
+  [InputMode.MANUAL]: {
+    displayName: '간편 입력',
+    emoji: '🎚️',
+    description: '슬라이더로 현재 컨디션을 직접 입력',
+    dataSources: ['컨디션 슬라이더'],
+  },
+};
+
+/**
+ * 기본 설정값
+ */
+export const DEFAULT_SETTINGS = {
+  inputMode: InputMode.MANUAL as InputMode,
+  enableSedentaryDetection: true,
+  sedentaryThresholdMinutes: 30,
+  enableNotifications: true,
+  daytimeStartHour: 8,
+  daytimeEndHour: 22,
 };

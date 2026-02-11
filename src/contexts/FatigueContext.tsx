@@ -1,11 +1,37 @@
 /**
  * 피로도 데이터 관리를 위한 Context
+ * V2: HealthService, SedentaryDetector, SleepEstimator 통합
  */
 
-import React, {createContext, useContext, useState, useEffect, ReactNode} from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  ReactNode,
+} from 'react';
+import {Platform} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {ActivityRecord, ActivityType, DailyFatigueData} from '../types';
-import {calculateFatigue, calculateFatigueStats} from '../utils/fatigueCalculator';
+import {
+  ActivityRecord,
+  ActivityType,
+  DailyFatigueData,
+  HealthDataSnapshot,
+  SedentaryEvent,
+  InputMode,
+  DataSource,
+} from '../types';
+import {
+  calculateFatigue,
+  calculateFatigueV2,
+  calculateFatigueStats,
+} from '../utils/fatigueCalculator';
+import {useSettings} from './SettingsContext';
+import {createHealthService, IHealthService} from '../services/HealthService';
+import {SedentaryDetector} from '../services/SedentaryDetector';
+import {SleepEstimator} from '../services/SleepEstimator';
 
 interface FatigueContextType {
   dailyData: DailyFatigueData;
@@ -13,6 +39,10 @@ interface FatigueContextType {
   fatigueMessage: string;
   recommendation: string;
   isLoading: boolean;
+  inputMode: InputMode;
+  healthData: HealthDataSnapshot | null;
+  sedentaryEvents: SedentaryEvent[];
+  dataSourceLabel: string;
   addActivity: (
     activityType: ActivityType,
     durationMinutes: number,
@@ -21,17 +51,24 @@ interface FatigueContextType {
   removeActivity: (activityId: string) => void;
   clearAllActivities: () => void;
   getTotalMinutesForActivity: (activityType: ActivityType) => number;
+  setManualSliderValue: (value: number) => void;
+  refreshHealthData: () => Promise<void>;
 }
 
-const FatigueContext = createContext<FatigueContextType | undefined>(
-  undefined,
-);
+const FatigueContext = createContext<FatigueContextType | undefined>(undefined);
 
 const STORAGE_KEY = '@pirodo_daily_data';
+const HEALTH_REFRESH_INTERVAL = 5 * 60 * 1000; // 5분
 
-export const FatigueProvider: React.FC<{children: ReactNode}> = ({
-  children,
-}) => {
+const DATA_SOURCE_LABELS: Record<InputMode, string> = {
+  [InputMode.WATCH]: 'Watch',
+  [InputMode.PHONE]: 'Phone',
+  [InputMode.MANUAL]: 'Manual',
+};
+
+export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => {
+  const {settings} = useSettings();
+
   const [dailyData, setDailyData] = useState<DailyFatigueData>({
     date: new Date().toISOString().split('T')[0],
     activities: [],
@@ -42,6 +79,12 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
   const [fatigueMessage, setFatigueMessage] = useState('');
   const [recommendation, setRecommendation] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [healthData, setHealthData] = useState<HealthDataSnapshot | null>(null);
+  const [sedentaryEvents, setSedentaryEvents] = useState<SedentaryEvent[]>([]);
+
+  const healthServiceRef = useRef<IHealthService | null>(null);
+  const sedentaryDetectorRef = useRef<SedentaryDetector | null>(null);
+  const sleepEstimatorRef = useRef<SleepEstimator | null>(null);
 
   // 데이터 로드
   useEffect(() => {
@@ -55,7 +98,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
       if (dailyData.date !== today) {
         resetDailyData();
       }
-    }, 60000); // 1분마다 체크
+    }, 60000);
 
     return () => clearInterval(checkDate);
   }, [dailyData.date]);
@@ -66,7 +109,133 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
       updateFatigue();
       saveData();
     }
-  }, [dailyData.activities]);
+  }, [dailyData.activities, dailyData.manualSliderValue, healthData, sedentaryEvents]);
+
+  // HealthService 초기화 (inputMode 변경 시)
+  useEffect(() => {
+    healthServiceRef.current?.disconnect();
+    healthServiceRef.current = createHealthService(settings.inputMode);
+
+    if (settings.inputMode !== InputMode.MANUAL) {
+      healthServiceRef.current.requestPermissions().then(granted => {
+        if (granted) {
+          refreshHealthData();
+        }
+      });
+    }
+
+    return () => {
+      healthServiceRef.current?.disconnect();
+    };
+  }, [settings.inputMode]);
+
+  // SedentaryDetector 초기화
+  useEffect(() => {
+    sedentaryDetectorRef.current?.stop();
+
+    if (
+      settings.enableSedentaryDetection &&
+      settings.inputMode !== InputMode.MANUAL
+    ) {
+      sedentaryDetectorRef.current = new SedentaryDetector(
+        settings,
+        (event: SedentaryEvent) => {
+          // 앉아있기 이벤트를 기록
+          setSedentaryEvents(prev => [...prev, event]);
+
+          // 자동 SITTING 활동 추가
+          const autoActivity: ActivityRecord = {
+            id: `auto_${Date.now()}`,
+            type: ActivityType.SITTING,
+            durationMinutes: event.durationMinutes,
+            timestamp: event.endTime,
+            note: '자동 감지',
+            source: DataSource.AUTO_SEDENTARY,
+            autoGenerated: true,
+          };
+
+          setDailyData(prev => ({
+            ...prev,
+            activities: [...prev.activities, autoActivity],
+          }));
+        },
+      );
+      sedentaryDetectorRef.current.start();
+    }
+
+    return () => {
+      sedentaryDetectorRef.current?.stop();
+    };
+  }, [settings.enableSedentaryDetection, settings.inputMode]);
+
+  // SleepEstimator 초기화 (Phone 모드)
+  useEffect(() => {
+    sleepEstimatorRef.current?.stop();
+
+    if (settings.inputMode === InputMode.PHONE) {
+      sleepEstimatorRef.current = new SleepEstimator();
+      sleepEstimatorRef.current.start();
+    }
+
+    return () => {
+      sleepEstimatorRef.current?.stop();
+    };
+  }, [settings.inputMode]);
+
+  // 주기적 건강 데이터 갱신
+  useEffect(() => {
+    if (settings.inputMode === InputMode.MANUAL) return;
+
+    const interval = setInterval(() => {
+      refreshHealthData();
+    }, HEALTH_REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [settings.inputMode]);
+
+  const refreshHealthData = useCallback(async () => {
+    const service = healthServiceRef.current;
+    if (!service) return;
+
+    try {
+      const now = new Date();
+      const startOfDay = new Date(now);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const [stepCount, heartRate, hrv, sleepData, stressLevel] =
+        await Promise.all([
+          service.getStepCount(startOfDay, now),
+          service.getHeartRate(startOfDay, now),
+          service.getHeartRateVariability(startOfDay, now),
+          service.getSleepData(now),
+          service.getStressLevel(),
+        ]);
+
+      // 폰 수면 추정
+      let estimatedSleepData = null;
+      if (settings.inputMode === InputMode.PHONE && sleepEstimatorRef.current) {
+        estimatedSleepData = sleepEstimatorRef.current.estimateSleep();
+      }
+
+      const snapshot: HealthDataSnapshot = {
+        timestamp: now,
+        source:
+          Platform.OS === 'ios'
+            ? DataSource.APPLE_HEALTH
+            : DataSource.GOOGLE_FIT,
+        stepCount: stepCount || undefined,
+        heartRate: heartRate || undefined,
+        heartRateVariability: hrv || undefined,
+        sleepData: sleepData || undefined,
+        stressLevel: stressLevel || undefined,
+        estimatedSleepData: estimatedSleepData || undefined,
+      };
+
+      setHealthData(snapshot);
+    } catch (e) {
+      console.error('건강 데이터 갱신 실패:', e);
+    }
+  }, [settings.inputMode]);
 
   const loadData = async () => {
     try {
@@ -75,24 +244,19 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
         const parsed = JSON.parse(stored);
         const today = new Date().toISOString().split('T')[0];
 
-        // 데이터 검증: 필수 필드 확인
         if (
           !parsed ||
           typeof parsed !== 'object' ||
           !parsed.date ||
           !Array.isArray(parsed.activities)
         ) {
-          console.warn('Invalid stored data format, resetting...');
           resetDailyData();
           return;
         }
 
-        // 저장된 날짜가 오늘이 아니면 초기화
         if (parsed.date === today) {
-          // timestamp를 Date 객체로 변환 및 활동 데이터 검증
           const activities = parsed.activities
             .filter((a: any) => {
-              // 필수 필드 검증
               return (
                 a &&
                 typeof a === 'object' &&
@@ -108,13 +272,23 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
               timestamp: new Date(a.timestamp),
             }));
           setDailyData({...parsed, activities});
+
+          // 저장된 앉아있기 이벤트 복원
+          if (parsed.sedentaryEvents) {
+            setSedentaryEvents(
+              parsed.sedentaryEvents.map((e: any) => ({
+                ...e,
+                startTime: new Date(e.startTime),
+                endTime: new Date(e.endTime),
+              })),
+            );
+          }
         } else {
           resetDailyData();
         }
       }
     } catch (error) {
       console.error('Failed to load data:', error);
-      // JSON 파싱 실패 시 초기화
       resetDailyData();
     } finally {
       setIsLoading(false);
@@ -123,7 +297,12 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
 
   const saveData = async () => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dailyData));
+      const dataToSave = {
+        ...dailyData,
+        sedentaryEvents,
+        inputMode: settings.inputMode,
+      };
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     } catch (error) {
       console.error('Failed to save data:', error);
     }
@@ -136,10 +315,19 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
       currentFatiguePercentage: 50,
     };
     setDailyData(newData);
+    setSedentaryEvents([]);
+    setHealthData(null);
   };
 
   const updateFatigue = () => {
-    const calculated = calculateFatigue(dailyData.activities, 50);
+    const calculated = calculateFatigueV2(
+      dailyData.activities,
+      healthData,
+      sedentaryEvents,
+      dailyData.manualSliderValue ?? null,
+      settings.inputMode,
+      50,
+    );
     const stats = calculateFatigueStats(dailyData.activities, calculated);
 
     setFatiguePercentage(calculated);
@@ -163,6 +351,8 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
       durationMinutes,
       timestamp: new Date(),
       note,
+      source: DataSource.MANUAL_ACTIVITY,
+      autoGenerated: false,
     };
 
     setDailyData(prev => ({
@@ -182,13 +372,22 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
     setDailyData(prev => ({
       ...prev,
       activities: [],
+      manualSliderValue: undefined,
     }));
+    setSedentaryEvents([]);
   };
 
   const getTotalMinutesForActivity = (activityType: ActivityType): number => {
     return dailyData.activities
       .filter(a => a.type === activityType)
       .reduce((sum, a) => sum + a.durationMinutes, 0);
+  };
+
+  const setManualSliderValue = (value: number) => {
+    setDailyData(prev => ({
+      ...prev,
+      manualSliderValue: Math.round(value),
+    }));
   };
 
   return (
@@ -199,10 +398,16 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({
         fatigueMessage,
         recommendation,
         isLoading,
+        inputMode: settings.inputMode,
+        healthData,
+        sedentaryEvents,
+        dataSourceLabel: DATA_SOURCE_LABELS[settings.inputMode],
         addActivity,
         removeActivity,
         clearAllActivities,
         getTotalMinutesForActivity,
+        setManualSliderValue,
+        refreshHealthData,
       }}>
       {children}
     </FatigueContext.Provider>

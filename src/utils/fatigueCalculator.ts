@@ -2,8 +2,17 @@
  * 피로도 계산 엔진
  */
 
-import {ActivityRecord, ActivityType, FatigueStats} from '../types';
-import {ACTIVITY_TYPE_INFO, RECOMMENDED} from './constants';
+import {
+  ActivityRecord,
+  ActivityType,
+  FatigueStats,
+  HealthDataSnapshot,
+  SedentaryEvent,
+  InputMode,
+  DataSource,
+  SleepData,
+} from '../types';
+import {ACTIVITY_TYPE_INFO, RECOMMENDED, HEALTH_WEIGHTS} from './constants';
 
 /**
  * 활동의 피로도 영향 계산
@@ -189,4 +198,168 @@ export const calculateFatigueStats = (
     recommendation: getRecommendation(fatiguePercentage, activities),
     fatigueMessage: getFatigueMessage(fatiguePercentage, activities),
   };
+};
+
+// =============================================
+// V2: 건강 데이터 기반 피로도 계산
+// =============================================
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, Math.round(value)));
+
+/**
+ * 심박수/HRV 기반 심혈관 영향 (-13 ~ +22)
+ */
+const calculateCardiovascularImpact = (
+  heartRate: number,
+  hrv: number,
+): number => {
+  let impact = 0;
+
+  // 심박수: 높으면 피로, 낮으면 회복
+  if (heartRate > 90) impact += 10;
+  else if (heartRate > HEALTH_WEIGHTS.HR_RESTING_HIGH) impact += 5;
+  else if (heartRate < 55) impact -= 8;
+  else if (heartRate < HEALTH_WEIGHTS.HR_RESTING_LOW) impact -= 5;
+
+  // HRV: 높으면 회복 좋음, 낮으면 스트레스
+  if (hrv > 60) impact -= 8;
+  else if (hrv > HEALTH_WEIGHTS.HRV_GOOD) impact -= 5;
+  else if (hrv < 20) impact += 12;
+  else if (hrv < HEALTH_WEIGHTS.HRV_POOR) impact += 8;
+
+  return impact;
+};
+
+/**
+ * Samsung 스트레스 레벨 영향 (-5 ~ +12)
+ */
+const calculateStressImpact = (stressLevel: number): number => {
+  if (stressLevel > 80) return 12;
+  if (stressLevel > 60) return 8;
+  if (stressLevel > 40) return 3;
+  if (stressLevel < 20) return -5;
+  return 0;
+};
+
+/**
+ * 걸음수 영향 (-8 ~ +8)
+ */
+const calculateStepImpact = (steps: number): number => {
+  if (steps < 2000) return 8;      // 매우 비활동적
+  if (steps < 4000) return 3;      // 평균 이하
+  if (steps >= 5000 && steps <= 10000) return -8;  // 건강 범위
+  if (steps >= 10000 && steps <= 15000) return -5;  // 활동적
+  if (steps > 15000) return 3;     // 과도한 활동
+  return 0;
+};
+
+/**
+ * 수면 데이터 영향 (통합: 워치/폰/수동) (-15 ~ +25)
+ */
+const calculateSleepImpactV2 = (
+  activities: ActivityRecord[],
+  healthData: HealthDataSnapshot | null,
+): number => {
+  // 우선순위: 워치 수면 > 폰 추정 수면 > 수동 입력
+  const sleepData = healthData?.sleepData ?? healthData?.estimatedSleepData;
+
+  if (sleepData) {
+    const hours = sleepData.totalMinutes / 60;
+    let impact = 0;
+
+    if (hours < 4) impact = 25;
+    else if (hours < 5) impact = 15;
+    else if (hours < 6) impact = 10;
+    else if (hours >= HEALTH_WEIGHTS.SLEEP_OPTIMAL_MIN &&
+             hours <= HEALTH_WEIGHTS.SLEEP_OPTIMAL_MAX) impact = -15;
+    else if (hours > 10) impact = 5;
+
+    // 깊은 수면 비율 보너스 (워치 전용)
+    if (sleepData.deepMinutes && sleepData.totalMinutes > 0) {
+      const deepRatio = sleepData.deepMinutes / sleepData.totalMinutes;
+      if (deepRatio > 0.20) impact -= 5;
+      else if (deepRatio < 0.10) impact += 5;
+    }
+
+    return impact;
+  }
+
+  // 수동 수면 활동 기록 fallback
+  return calculateSleepBonus(activities);
+};
+
+/**
+ * V2 피로도 계산 (건강 데이터 통합)
+ */
+export const calculateFatigueV2 = (
+  activities: ActivityRecord[],
+  healthData: HealthDataSnapshot | null,
+  sedentaryEvents: SedentaryEvent[],
+  manualSliderValue: number | null,
+  inputMode: InputMode,
+  baselineFatigue: number = 50,
+): number => {
+  // Tier C: 슬라이더 기반
+  if (inputMode === InputMode.MANUAL && manualSliderValue !== null) {
+    let fatigue = manualSliderValue;
+
+    // 수동 활동 보정 (감쇄 적용)
+    activities
+      .filter(a => a.source === DataSource.MANUAL_ACTIVITY || !a.source)
+      .forEach(activity => {
+        fatigue += calculateActivityImpact(activity) * 0.5;
+      });
+
+    return clamp(fatigue, 0, 100);
+  }
+
+  // Tier A/B: 자동 데이터 기반
+  let fatigue = baselineFatigue;
+
+  // 1. 수면 영향
+  fatigue += calculateSleepImpactV2(activities, healthData);
+
+  // 2. 심박수/HRV (워치 전용)
+  if (healthData?.heartRate != null && healthData?.heartRateVariability != null) {
+    fatigue += calculateCardiovascularImpact(
+      healthData.heartRate,
+      healthData.heartRateVariability,
+    );
+  }
+
+  // 3. 스트레스 레벨 (삼성 워치)
+  if (healthData?.stressLevel != null) {
+    fatigue += calculateStressImpact(healthData.stressLevel);
+  }
+
+  // 4. 걸음수
+  const stepCount = healthData?.stepCount ?? 0;
+  if (stepCount > 0) {
+    fatigue += calculateStepImpact(stepCount);
+  }
+
+  // 5. 앉아있기 자동 감지
+  const totalSedentaryMinutes = sedentaryEvents.reduce(
+    (sum, e) => sum + e.durationMinutes,
+    0,
+  );
+  fatigue += (totalSedentaryMinutes / 60) * HEALTH_WEIGHTS.SEDENTARY_PER_HOUR;
+
+  // 6. 스크린타임
+  if (healthData?.screenTimeMinutes) {
+    fatigue += (healthData.screenTimeMinutes / 60) * HEALTH_WEIGHTS.SCREEN_TIME_PER_HOUR;
+  }
+
+  // 7. 수동 활동 보충
+  activities
+    .filter(a => a.source === DataSource.MANUAL_ACTIVITY || !a.source)
+    .forEach(activity => {
+      fatigue += calculateActivityImpact(activity);
+    });
+
+  // 8. 균형 패널티
+  fatigue += calculateBalancePenalty(activities);
+
+  return clamp(fatigue, 0, 100);
 };

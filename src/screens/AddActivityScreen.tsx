@@ -13,15 +13,15 @@ import {
   Alert,
 } from 'react-native';
 import {useFatigue} from '../contexts/FatigueContext';
-import {ActivityType} from '../types';
-import {ACTIVITY_TYPE_INFO} from '../utils/constants';
+import {ActivityType, InputMode} from '../types';
+import {ACTIVITY_TYPE_INFO, INPUT_MODE_INFO} from '../utils/constants';
 
 interface AddActivityScreenProps {
   navigation: any;
 }
 
 const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
-  const {addActivity} = useFatigue();
+  const {addActivity, inputMode} = useFatigue();
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null);
   const [hours, setHours] = useState('0');
   const [minutes, setMinutes] = useState('30');
@@ -87,6 +87,23 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
+        {/* 자동 추적 배너 */}
+        {inputMode !== InputMode.MANUAL && (
+          <View style={styles.autoBanner}>
+            <Text style={styles.autoBannerEmoji}>
+              {INPUT_MODE_INFO[inputMode].emoji}
+            </Text>
+            <View style={styles.autoBannerContent}>
+              <Text style={styles.autoBannerTitle}>
+                {INPUT_MODE_INFO[inputMode].displayName} 모드 활성
+              </Text>
+              <Text style={styles.autoBannerDesc}>
+                걸음수, 수면 등이 자동 기록됩니다. 여기서는 보충 활동만 추가하세요.
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* 피로 증가 활동 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>피로 증가 활동</Text>
@@ -190,6 +207,32 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+  },
+  autoBanner: {
+    flexDirection: 'row',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  autoBannerEmoji: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  autoBannerContent: {
+    flex: 1,
+  },
+  autoBannerTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2E7D32',
+    marginBottom: 2,
+  },
+  autoBannerDesc: {
+    fontSize: 12,
+    color: '#558B2F',
+    lineHeight: 16,
   },
   section: {
     marginBottom: 30,

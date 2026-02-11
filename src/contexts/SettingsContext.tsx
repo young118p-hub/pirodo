@@ -1,0 +1,77 @@
+/**
+ * 설정 Context - 사용자 설정 저장/관리
+ */
+
+import React, {createContext, useContext, useState, useEffect, useCallback} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {AppSettings, InputMode} from '../types';
+import {DEFAULT_SETTINGS} from '../utils/constants';
+
+const SETTINGS_STORAGE_KEY = '@pirodo_settings';
+
+interface SettingsContextType {
+  settings: AppSettings;
+  isLoading: boolean;
+  updateSettings: (partial: Partial<AppSettings>) => void;
+  setInputMode: (mode: InputMode) => void;
+}
+
+const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+
+export const SettingsProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // AsyncStorage에서 설정 로드
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored) as Partial<AppSettings>;
+          setSettings({...DEFAULT_SETTINGS, ...parsed});
+        }
+      } catch (e) {
+        console.error('설정 로드 실패:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  // 설정 저장
+  const saveSettings = useCallback(async (newSettings: AppSettings) => {
+    try {
+      await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
+    } catch (e) {
+      console.error('설정 저장 실패:', e);
+    }
+  }, []);
+
+  const updateSettings = useCallback((partial: Partial<AppSettings>) => {
+    setSettings(prev => {
+      const updated = {...prev, ...partial};
+      saveSettings(updated);
+      return updated;
+    });
+  }, [saveSettings]);
+
+  const setInputMode = useCallback((mode: InputMode) => {
+    updateSettings({inputMode: mode});
+  }, [updateSettings]);
+
+  return (
+    <SettingsContext.Provider value={{settings, isLoading, updateSettings, setInputMode}}>
+      {children}
+    </SettingsContext.Provider>
+  );
+};
+
+export const useSettings = (): SettingsContextType => {
+  const context = useContext(SettingsContext);
+  if (!context) {
+    throw new Error('useSettings must be used within a SettingsProvider');
+  }
+  return context;
+};

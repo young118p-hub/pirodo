@@ -4,17 +4,20 @@
 
 import React from 'react';
 import {StatusBar, SafeAreaView, StyleSheet} from 'react-native';
+import {SettingsProvider} from './src/contexts/SettingsContext';
 import {FatigueProvider} from './src/contexts/FatigueContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 const App: React.FC = () => {
   return (
-    <FatigueProvider>
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
-        <AppNavigator />
-      </SafeAreaView>
-    </FatigueProvider>
+    <SettingsProvider>
+      <FatigueProvider>
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+          <AppNavigator />
+        </SafeAreaView>
+      </FatigueProvider>
+    </SettingsProvider>
   );
 };
 
