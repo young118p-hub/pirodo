@@ -1,6 +1,5 @@
 /**
- * 홈 화면 - 현재 피로도 표시
- * V2: 슬라이더, 자동 데이터 카드, 설정 버튼 추가
+ * 홈 화면 - 도넛 차트 + 핵심 지표 + 회복 추천 + 퀵버튼
  */
 
 import React, {useState} from 'react';
@@ -20,7 +19,8 @@ import {
   getFatigueLevelFromPercentage,
   INPUT_MODE_INFO,
 } from '../utils/constants';
-import {InputMode} from '../types';
+import {InputMode, ActivityType} from '../types';
+import {getRecoveryTips} from '../utils/recoveryEngine';
 
 interface HomeScreenProps {
   navigation: any;
@@ -30,13 +30,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   const {
     fatiguePercentage,
     fatigueMessage,
-    recommendation,
     dailyData,
     isLoading,
     inputMode,
     healthData,
     dataSourceLabel,
     setManualSliderValue,
+    addActivity,
   } = useFatigue();
 
   const [sliderValue, setSliderValue] = useState(
@@ -70,37 +70,33 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
     return `${hours}h ${mins}m`;
   };
 
+  const recoveryTips = getRecoveryTips(
+    fatiguePercentage,
+    healthData,
+    dailyData.activities,
+  );
+
+  // 퀵버튼 핸들러
+  const handleQuickAdd = (type: ActivityType, label: string) => {
+    const duration = type === ActivityType.WATER ? 1 : 30;
+    addActivity(type, duration);
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.title}>피로도</Text>
-            <Text style={styles.date}>
-              {new Date(dailyData.date).toLocaleDateString('ko-KR', {
-                month: 'long',
-                day: 'numeric',
-                weekday: 'short',
-              })}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => navigation.navigate('Settings')}>
-            <Text style={styles.settingsIcon}>⚙️</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 데이터 소스 뱃지 */}
-        <View style={styles.sourceBadge}>
-          <Text style={styles.sourceBadgeText}>
-            {INPUT_MODE_INFO[inputMode].emoji} {dataSourceLabel}
-          </Text>
-        </View>
+        <Text style={styles.title}>피로도</Text>
+        <Text style={styles.date}>
+          {new Date(dailyData.date).toLocaleDateString('ko-KR', {
+            month: 'long',
+            day: 'numeric',
+            weekday: 'short',
+          })}
+        </Text>
       </View>
 
-      {/* Tier C: 간편 슬라이더 */}
+      {/* Tier C: 슬라이더 */}
       {inputMode === InputMode.MANUAL && (
         <View style={styles.sliderContainer}>
           <Text style={styles.sliderLabel}>지금 컨디션 어때?</Text>
@@ -127,83 +123,107 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
         </View>
       )}
 
-      {/* Tier A/B: 자동 데이터 카드 */}
-      {inputMode !== InputMode.MANUAL && healthData && (
-        <View style={styles.autoDataContainer}>
-          <View style={styles.autoDataCard}>
-            <Text style={styles.autoDataEmoji}>👟</Text>
-            <Text style={styles.autoDataValue}>
-              {healthData.stepCount?.toLocaleString() ?? '--'}
-            </Text>
-            <Text style={styles.autoDataLabel}>걸음</Text>
-          </View>
-          <View style={styles.autoDataCard}>
-            <Text style={styles.autoDataEmoji}>😴</Text>
-            <Text style={styles.autoDataValue}>{formatSleepHours()}</Text>
-            <Text style={styles.autoDataLabel}>수면</Text>
-          </View>
-          {healthData.heartRate != null && (
-            <View style={styles.autoDataCard}>
-              <Text style={styles.autoDataEmoji}>❤️</Text>
-              <Text style={styles.autoDataValue}>{healthData.heartRate}</Text>
-              <Text style={styles.autoDataLabel}>bpm</Text>
-            </View>
-          )}
-          {healthData.heartRate == null && (
-            <View style={styles.autoDataCard}>
-              <Text style={styles.autoDataEmoji}>🪑</Text>
-              <Text style={styles.autoDataValue}>
-                {healthData.sedentaryMinutes ?? 0}
-              </Text>
-              <Text style={styles.autoDataLabel}>앉아있기(분)</Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* 피로도 원 */}
+      {/* 도넛 차트 */}
       <View style={styles.circleContainer}>
-        <FatigueCircle percentage={fatiguePercentage} size={280} />
+        <FatigueCircle percentage={fatiguePercentage} size={220} />
+        <Text style={styles.fatigueMessage}>{fatigueMessage}</Text>
       </View>
 
-      {/* 메시지 */}
-      <View style={styles.messageContainer}>
-        <Text style={styles.message}>{fatigueMessage}</Text>
-        <View style={[styles.badge, {backgroundColor: levelInfo.color}]}>
-          <Text style={styles.badgeText}>{levelInfo.message}</Text>
+      {/* 핵심 지표 행 (급여앱 스타일) */}
+      <View style={styles.metricsCard}>
+        <View style={styles.metricItem}>
+          <Text style={styles.metricLabel}>
+            {inputMode === InputMode.MANUAL ? '활동' : '걸음수'}
+          </Text>
+          <Text style={styles.metricValue}>
+            {inputMode === InputMode.MANUAL
+              ? dailyData.activities.length
+              : healthData?.stepCount?.toLocaleString() ?? '--'}
+          </Text>
+        </View>
+        <View style={styles.metricDivider} />
+        <View style={styles.metricItem}>
+          <Text style={styles.metricLabel}>수면</Text>
+          <Text style={styles.metricValue}>{formatSleepHours()}</Text>
+        </View>
+        <View style={styles.metricDivider} />
+        <View style={styles.metricItem}>
+          <Text style={styles.metricLabel}>
+            {healthData?.heartRate != null ? '심박수' : '앉아있기'}
+          </Text>
+          <Text style={styles.metricValue}>
+            {healthData?.heartRate != null
+              ? `${healthData.heartRate} bpm`
+              : `${healthData?.sedentaryMinutes ?? 0}분`}
+          </Text>
         </View>
       </View>
 
-      {/* 추천 사항 */}
-      <View style={styles.recommendationContainer}>
-        <Text style={styles.recommendationTitle}>💡 추천</Text>
-        <Text style={styles.recommendationText}>{recommendation}</Text>
-      </View>
-
-      {/* 활동 요약 */}
-      <View style={styles.summaryContainer}>
-        <Text style={styles.summaryTitle}>오늘의 활동</Text>
-        <Text style={styles.summaryText}>
-          총 {dailyData.activities.length}개의 활동 기록
-          {dailyData.activities.filter(a => a.autoGenerated).length > 0 &&
-            ` (자동 ${dailyData.activities.filter(a => a.autoGenerated).length}개)`}
+      {/* 데이터 소스 */}
+      <View style={styles.sourceBadge}>
+        <Text style={styles.sourceBadgeText}>
+          {INPUT_MODE_INFO[inputMode].emoji} {dataSourceLabel}
         </Text>
       </View>
 
-      {/* 버튼들 */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, styles.primaryButton]}
-          onPress={() => navigation.navigate('AddActivity')}>
-          <Text style={styles.buttonText}>+ 활동 추가</Text>
-        </TouchableOpacity>
+      {/* 회복 추천 */}
+      {recoveryTips.length > 0 && (
+        <View style={styles.tipsContainer}>
+          <Text style={styles.tipsTitle}>회복 추천</Text>
+          {recoveryTips.map((tip, index) => (
+            <View key={index} style={styles.tipItem}>
+              <Text style={styles.tipEmoji}>{tip.emoji}</Text>
+              <View style={styles.tipContent}>
+                <Text style={styles.tipTitle}>{tip.title}</Text>
+                <Text style={styles.tipDesc}>{tip.description}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
 
+      {/* 퀵 버튼 */}
+      <View style={styles.quickButtonsContainer}>
+        <Text style={styles.quickTitle}>빠른 기록</Text>
+        <View style={styles.quickButtonRow}>
+          <TouchableOpacity
+            style={styles.quickButton}
+            onPress={() => handleQuickAdd(ActivityType.CAFFEINE, '커피')}>
+            <Text style={styles.quickEmoji}>☕</Text>
+            <Text style={styles.quickLabel}>커피</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickButton}
+            onPress={() => handleQuickAdd(ActivityType.WATER, '물')}>
+            <Text style={styles.quickEmoji}>💧</Text>
+            <Text style={styles.quickLabel}>물</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickButton}
+            onPress={() => handleQuickAdd(ActivityType.REST, '휴식')}>
+            <Text style={styles.quickEmoji}>🛋️</Text>
+            <Text style={styles.quickLabel}>휴식</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickButton}
+            onPress={() => handleQuickAdd(ActivityType.EXERCISE, '운동')}>
+            <Text style={styles.quickEmoji}>🏃</Text>
+            <Text style={styles.quickLabel}>운동</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* 상세 버튼 */}
+      <View style={styles.actionButtons}>
         <TouchableOpacity
-          style={[styles.button, styles.secondaryButton]}
+          style={styles.addButton}
+          onPress={() => navigation.navigate('AddActivity')}>
+          <Text style={styles.addButtonText}>+ 활동 추가</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.detailButton}
           onPress={() => navigation.navigate('Details')}>
-          <Text style={[styles.buttonText, styles.secondaryButtonText]}>
-            상세 보기
-          </Text>
+          <Text style={styles.detailButtonText}>상세 보기</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -217,7 +237,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 40,
+    paddingTop: 60,
+    paddingBottom: 30,
   },
   loadingContainer: {
     flex: 1,
@@ -230,44 +251,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  // 헤더
   header: {
     marginBottom: 20,
   },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
   },
   date: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 5,
+    fontSize: 14,
+    color: '#888',
+    marginTop: 4,
   },
-  settingsButton: {
-    padding: 8,
-  },
-  settingsIcon: {
-    fontSize: 28,
-  },
-  sourceBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#E8F0FE',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginTop: 8,
-  },
-  sourceBadgeText: {
-    fontSize: 12,
-    color: '#1967D2',
-    fontWeight: '500',
-  },
-  // 슬라이더 (Tier C)
+  // 슬라이더
   sliderContainer: {
     backgroundColor: 'white',
     borderRadius: 16,
@@ -275,16 +273,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 3,
   },
   sliderLabel: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   slider: {
     width: '100%',
@@ -297,139 +295,178 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sliderLabelText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#999',
   },
   sliderValueText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
   },
-  // 자동 데이터 카드 (Tier A/B)
-  autoDataContainer: {
-    flexDirection: 'row',
-    gap: 10,
+  // 도넛 차트
+  circleContainer: {
+    alignItems: 'center',
     marginBottom: 20,
   },
-  autoDataCard: {
+  fatigueMessage: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  // 핵심 지표
+  metricsCard: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  metricItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  metricLabel: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 4,
+  },
+  metricValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+  },
+  metricDivider: {
+    width: 1,
+    backgroundColor: '#E8E8E8',
+    marginVertical: 4,
+  },
+  // 소스 뱃지
+  sourceBadge: {
+    alignSelf: 'center',
+    backgroundColor: '#E8F0FE',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginBottom: 20,
+  },
+  sourceBadgeText: {
+    fontSize: 12,
+    color: '#1967D2',
+    fontWeight: '500',
+  },
+  // 회복 추천
+  tipsContainer: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  tipsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  tipItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  tipEmoji: {
+    fontSize: 20,
+    marginRight: 10,
+    marginTop: 2,
+  },
+  tipContent: {
+    flex: 1,
+  },
+  tipTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  tipDesc: {
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 18,
+  },
+  // 퀵 버튼
+  quickButtonsContainer: {
+    marginBottom: 16,
+  },
+  quickTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  quickButtonRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quickButton: {
     flex: 1,
     backgroundColor: 'white',
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 2,
   },
-  autoDataEmoji: {
+  quickEmoji: {
     fontSize: 24,
     marginBottom: 4,
   },
-  autoDataValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  autoDataLabel: {
+  quickLabel: {
     fontSize: 11,
-    color: '#888',
-    marginTop: 2,
-  },
-  circleContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  messageContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  message: {
-    fontSize: 20,
     fontWeight: '600',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 15,
+    color: '#555',
   },
-  badge: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  recommendationContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  recommendationTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  recommendationText: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
-  },
-  summaryContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  summaryText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  buttonContainer: {
+  // 하단 버튼
+  actionButtons: {
     flexDirection: 'row',
-    gap: 15,
+    gap: 12,
   },
-  button: {
+  addButton: {
     flex: 1,
-    paddingVertical: 16,
+    backgroundColor: '#007AFF',
     borderRadius: 12,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  primaryButton: {
-    backgroundColor: '#007AFF',
+  addButtonText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '600',
   },
-  secondaryButton: {
+  detailButton: {
+    flex: 1,
     backgroundColor: 'white',
-    borderWidth: 2,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1.5,
     borderColor: '#007AFF',
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
-  },
-  secondaryButtonText: {
+  detailButtonText: {
     color: '#007AFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 

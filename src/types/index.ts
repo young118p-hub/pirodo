@@ -165,3 +165,24 @@ export interface FatigueStats {
   recommendation: string;
   fatigueMessage: string;
 }
+
+/**
+ * 일별 히스토리 레코드 (차트용)
+ */
+export interface DailyHistoryRecord {
+  date: string;
+  fatiguePercentage: number;
+  stepCount: number;
+  sleepHours: number;
+  activityCount: number;
+}
+
+/**
+ * 회복 추천 팁
+ */
+export interface RecoveryTip {
+  emoji: string;
+  title: string;
+  description: string;
+  priority: number;
+}

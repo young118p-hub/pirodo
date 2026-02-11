@@ -32,6 +32,9 @@ import {useSettings} from './SettingsContext';
 import {createHealthService, IHealthService} from '../services/HealthService';
 import {SedentaryDetector} from '../services/SedentaryDetector';
 import {SleepEstimator} from '../services/SleepEstimator';
+import {HistoryService} from '../services/HistoryService';
+import {NotificationService} from '../services/NotificationService';
+import {DailyHistoryRecord} from '../types';
 
 interface FatigueContextType {
   dailyData: DailyFatigueData;
@@ -53,6 +56,7 @@ interface FatigueContextType {
   getTotalMinutesForActivity: (activityType: ActivityType) => number;
   setManualSliderValue: (value: number) => void;
   refreshHealthData: () => Promise<void>;
+  getWeeklyHistory: () => Promise<(DailyHistoryRecord | null)[]>;
 }
 
 const FatigueContext = createContext<FatigueContextType | undefined>(undefined);
@@ -308,7 +312,31 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
     }
   };
 
-  const resetDailyData = () => {
+  const saveToHistory = async (data: DailyFatigueData) => {
+    const sleepActivities = data.activities.filter(
+      a => a.type === ActivityType.SLEEP,
+    );
+    const sleepMinutes = sleepActivities.reduce(
+      (sum, a) => sum + a.durationMinutes,
+      0,
+    );
+
+    const record: DailyHistoryRecord = {
+      date: data.date,
+      fatiguePercentage: data.currentFatiguePercentage,
+      stepCount: healthData?.stepCount ?? 0,
+      sleepHours: Math.round((sleepMinutes / 60) * 10) / 10,
+      activityCount: data.activities.length,
+    };
+    await HistoryService.saveDailyRecord(record);
+  };
+
+  const resetDailyData = async () => {
+    // 이전 날 데이터를 히스토리에 저장
+    if (dailyData.activities.length > 0 || dailyData.manualSliderValue != null) {
+      await saveToHistory(dailyData);
+    }
+
     const newData: DailyFatigueData = {
       date: new Date().toISOString().split('T')[0],
       activities: [],
@@ -334,10 +362,20 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
     setFatigueMessage(stats.fatigueMessage);
     setRecommendation(stats.recommendation);
 
-    setDailyData(prev => ({
-      ...prev,
-      currentFatiguePercentage: calculated,
-    }));
+    // 알림 체크
+    if (settings.enableNotifications) {
+      NotificationService.checkFatigueAlert(calculated);
+    }
+
+    setDailyData(prev => {
+      const updated = {
+        ...prev,
+        currentFatiguePercentage: calculated,
+      };
+      // 오늘 데이터를 히스토리에 업데이트
+      saveToHistory(updated);
+      return updated;
+    });
   };
 
   const addActivity = (
@@ -408,6 +446,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
         getTotalMinutesForActivity,
         setManualSliderValue,
         refreshHealthData,
+        getWeeklyHistory: () => HistoryService.getWeeklyHistory(),
       }}>
       {children}
     </FatigueContext.Provider>
