@@ -1,7 +1,7 @@
 /**
  * 로컬 푸시 알림 서비스
  * 피로도 레벨별 알림 + 앉아있기 + 수면 부족
- * 매번 다른 재미있는 메시지 랜덤 발송
+ * "했어요!" 버튼으로 피로도 감소 콜백 지원
  */
 
 import {Platform, PermissionsAndroid, Alert} from 'react-native';
@@ -17,6 +17,14 @@ import {
 // 알림 쿨다운 (같은 타입 알림 재발송 최소 간격)
 const NOTIFICATION_COOLDOWN = 30 * 60 * 1000; // 30분
 
+// "했어요!" 시 피로도 감소량 (타입별)
+const ACTION_REWARDS: Record<string, number> = {
+  fatigue_tired: 3,
+  fatigue_exhausted: 5,
+  sedentary: 4,
+  sleep_deficit: 2,
+};
+
 type NotificationType =
   | 'fatigue_excellent'
   | 'fatigue_good'
@@ -24,6 +32,9 @@ type NotificationType =
   | 'fatigue_exhausted'
   | 'sedentary'
   | 'sleep_deficit';
+
+// 알림 액션 콜백 (FatigueContext에서 등록)
+type ActionCallback = (rewardAmount: number) => void;
 
 class NotificationServiceImpl {
   private lastNotificationTime: Record<NotificationType, number> = {
@@ -34,6 +45,15 @@ class NotificationServiceImpl {
     sedentary: 0,
     sleep_deficit: 0,
   };
+
+  private onActionDone: ActionCallback | null = null;
+
+  /**
+   * FatigueContext에서 "했어요!" 콜백 등록
+   */
+  registerActionCallback(callback: ActionCallback): void {
+    this.onActionDone = callback;
+  }
 
   /**
    * Android 알림 권한 요청
@@ -49,7 +69,7 @@ class NotificationServiceImpl {
   }
 
   /**
-   * 쿨다운 체크 - 같은 타입 알림을 너무 자주 보내지 않도록
+   * 쿨다운 체크
    */
   private canSendNotification(type: NotificationType): boolean {
     const now = Date.now();
@@ -58,7 +78,7 @@ class NotificationServiceImpl {
   }
 
   /**
-   * 알림 발송 (현재는 Alert, 추후 네이티브 알림으로 교체 가능)
+   * 알림 발송 ("확인" + "했어요!" 버튼)
    */
   private sendNotification(
     type: NotificationType,
@@ -69,17 +89,27 @@ class NotificationServiceImpl {
 
     this.lastNotificationTime[type] = Date.now();
 
-    // 앱이 포그라운드에 있을 때는 Alert 사용
-    // 백그라운드 알림은 추후 react-native-push-notification 등으로 확장
-    Alert.alert(title, body, [{text: '확인', style: 'default'}]);
+    const reward = ACTION_REWARDS[type];
+    const buttons: any[] = [{text: '확인', style: 'cancel' as const}];
+
+    // 피로도 높음, 앉아있기, 수면 부족일 때만 "했어요!" 버튼 표시
+    if (reward) {
+      buttons.push({
+        text: '했어요! ✓',
+        style: 'default' as const,
+        onPress: () => {
+          if (this.onActionDone) {
+            this.onActionDone(reward);
+          }
+        },
+      });
+    }
+
+    Alert.alert(title, body, buttons);
   }
 
   /**
    * 피로도 기반 알림 체크 (레벨별 랜덤 메시지)
-   * - 0~25%: 칭찬 & 응원
-   * - 26~50%: 가볍게 챙기기
-   * - 51~75%: 경고 & 유머
-   * - 76~100%: 강력 경고 & 블랙유머
    */
   checkFatigueAlert(percentage: number): void {
     const pct = Math.round(percentage);

@@ -30,6 +30,8 @@ const DATA_SOURCE_LABELS: Record<string, string> = {
   [DataSource.AUTO_SEDENTARY]: '자동 감지',
   [DataSource.MANUAL_ACTIVITY]: '수동',
   [DataSource.MANUAL_SLIDER]: '슬라이더',
+  [DataSource.AUTO_IDLE_REST]: '유휴 회복',
+  [DataSource.NOTIFICATION_ACTION]: '알림 액션',
 };
 
 const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
