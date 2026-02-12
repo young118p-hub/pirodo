@@ -1,5 +1,6 @@
 /**
  * 통계 화면 - 주간 피로도 차트 + 요약
+ * V4 트렌디 UI
  */
 
 import React, {useEffect, useState} from 'react';
@@ -9,6 +10,7 @@ import {useFatigue} from '../contexts/FatigueContext';
 import {DailyHistoryRecord} from '../types';
 import {HistoryService} from '../services/HistoryService';
 import {getFatigueLevelFromPercentage, FATIGUE_LEVEL_INFO} from '../utils/constants';
+import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 const StatsScreen: React.FC = () => {
   const {fatiguePercentage} = useFatigue();
@@ -57,148 +59,138 @@ const StatsScreen: React.FC = () => {
   // 바 차트 설정
   const chartWidth = 320;
   const chartHeight = 180;
-  const barWidth = 32;
+  const barWidth = 30;
   const barGap = (chartWidth - barWidth * 7) / 8;
   const maxBarHeight = chartHeight - 40;
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        {/* 헤더 */}
-        <Text style={styles.title}>주간 통계</Text>
-        <Text style={styles.subtitle}>최근 7일 피로도 변화</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}>
+      {/* 헤더 */}
+      <Text style={styles.title}>주간 통계</Text>
+      <Text style={styles.subtitle}>최근 7일 피로도 변화</Text>
 
-        {/* 바 차트 */}
-        <View style={styles.chartCard}>
-          <Svg width={chartWidth} height={chartHeight}>
-            {/* 기준선들 */}
+      {/* 바 차트 */}
+      <View style={styles.chartCard}>
+        <Svg width={chartWidth} height={chartHeight}>
+          {/* 기준선들 */}
+          {[0.25, 0.5, 0.75].map((ratio, idx) => (
             <Line
-              x1={0} y1={maxBarHeight * 0.2}
-              x2={chartWidth} y2={maxBarHeight * 0.2}
-              stroke="#F0F0F0" strokeWidth={1}
+              key={idx}
+              x1={0}
+              y1={maxBarHeight * (1 - ratio)}
+              x2={chartWidth}
+              y2={maxBarHeight * (1 - ratio)}
+              stroke={COLORS.divider}
+              strokeWidth={1}
             />
-            <Line
-              x1={0} y1={maxBarHeight * 0.5}
-              x2={chartWidth} y2={maxBarHeight * 0.5}
-              stroke="#F0F0F0" strokeWidth={1}
-            />
-            <Line
-              x1={0} y1={maxBarHeight * 0.8}
-              x2={chartWidth} y2={maxBarHeight * 0.8}
-              stroke="#F0F0F0" strokeWidth={1}
-            />
+          ))}
 
-            {/* 바들 */}
-            {weeklyData.map((record, index) => {
-              const x = barGap + index * (barWidth + barGap);
-              const percentage = record?.fatiguePercentage ?? 0;
-              const barHeight = (percentage / 100) * maxBarHeight;
-              const y = maxBarHeight - barHeight;
-              const hasData = record !== null;
+          {/* 바들 */}
+          {weeklyData.map((record, index) => {
+            const x = barGap + index * (barWidth + barGap);
+            const percentage = record?.fatiguePercentage ?? 0;
+            const barHeight = (percentage / 100) * maxBarHeight;
+            const y = maxBarHeight - barHeight;
+            const hasData = record !== null;
+            const isToday = index === 6;
 
-              return (
-                <React.Fragment key={index}>
-                  {/* 바 */}
-                  <Rect
-                    x={x}
-                    y={hasData ? y : maxBarHeight - 4}
-                    width={barWidth}
-                    height={hasData ? Math.max(barHeight, 4) : 4}
-                    rx={4}
-                    fill={hasData ? getBarColor(percentage) : '#E0E0E0'}
-                    opacity={hasData ? 1 : 0.3}
-                  />
-                  {/* 퍼센트 라벨 */}
-                  {hasData && (
-                    <SvgText
-                      x={x + barWidth / 2}
-                      y={y - 6}
-                      fontSize={10}
-                      fontWeight="600"
-                      fill={getBarColor(percentage)}
-                      textAnchor="middle">
-                      {percentage}%
-                    </SvgText>
-                  )}
-                  {/* 요일 라벨 */}
+            return (
+              <React.Fragment key={index}>
+                <Rect
+                  x={x}
+                  y={hasData ? y : maxBarHeight - 4}
+                  width={barWidth}
+                  height={hasData ? Math.max(barHeight, 4) : 4}
+                  rx={6}
+                  fill={hasData ? getBarColor(percentage) : COLORS.gaugeBackground}
+                  opacity={hasData ? 1 : 0.3}
+                />
+                {hasData && (
                   <SvgText
                     x={x + barWidth / 2}
-                    y={maxBarHeight + 15}
-                    fontSize={11}
-                    fontWeight={index === 6 ? 'bold' : 'normal'}
-                    fill={index === 6 ? '#007AFF' : '#888'}
+                    y={y - 6}
+                    fontSize={10}
+                    fontWeight="600"
+                    fill={getBarColor(percentage)}
                     textAnchor="middle">
-                    {getDayLabel(index)}
+                    {percentage}%
                   </SvgText>
-                  {/* 날짜 라벨 */}
-                  <SvgText
-                    x={x + barWidth / 2}
-                    y={maxBarHeight + 28}
-                    fontSize={9}
-                    fill="#BBB"
-                    textAnchor="middle">
-                    {getDateLabel(index)}
-                  </SvgText>
-                </React.Fragment>
-              );
-            })}
-          </Svg>
-        </View>
-
-        {/* 주간 요약 */}
-        {stats && stats.dataCount > 0 ? (
-          <>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryCard}>
-                <Text style={styles.summaryValue}>{stats.avgFatigue}%</Text>
-                <Text style={styles.summaryLabel}>평균 피로도</Text>
-              </View>
-              <View style={styles.summaryCard}>
-                <Text style={[styles.summaryValue, {color: '#F44336'}]}>
-                  {stats.maxFatigue}%
-                </Text>
-                <Text style={styles.summaryLabel}>최고 피로도</Text>
-              </View>
-              <View style={styles.summaryCard}>
-                <Text style={[styles.summaryValue, {color: '#4CAF50'}]}>
-                  {stats.minFatigue}%
-                </Text>
-                <Text style={styles.summaryLabel}>최저 피로도</Text>
-              </View>
-            </View>
-
-            <View style={styles.detailCard}>
-              <Text style={styles.detailTitle}>주간 인사이트</Text>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailEmoji}>😴</Text>
-                <Text style={styles.detailText}>
-                  평균 수면 {stats.avgSleep}시간
-                </Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailEmoji}>👟</Text>
-                <Text style={styles.detailText}>
-                  평균 걸음수 {stats.avgSteps.toLocaleString()}보
-                </Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailEmoji}>📅</Text>
-                <Text style={styles.detailText}>
-                  가장 피곤한 요일: {stats.worstDay}
-                </Text>
-              </View>
-            </View>
-          </>
-        ) : (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyEmoji}>📊</Text>
-            <Text style={styles.emptyTitle}>아직 데이터가 부족해요</Text>
-            <Text style={styles.emptyDesc}>
-              매일 사용하면 여기에 주간 통계가 표시됩니다
-            </Text>
-          </View>
-        )}
+                )}
+                <SvgText
+                  x={x + barWidth / 2}
+                  y={maxBarHeight + 15}
+                  fontSize={11}
+                  fontWeight={isToday ? 'bold' : 'normal'}
+                  fill={isToday ? COLORS.accent : COLORS.textSecondary}
+                  textAnchor="middle">
+                  {getDayLabel(index)}
+                </SvgText>
+                <SvgText
+                  x={x + barWidth / 2}
+                  y={maxBarHeight + 28}
+                  fontSize={9}
+                  fill={COLORS.textTertiary}
+                  textAnchor="middle">
+                  {getDateLabel(index)}
+                </SvgText>
+              </React.Fragment>
+            );
+          })}
+        </Svg>
       </View>
+
+      {/* 주간 요약 */}
+      {stats && stats.dataCount > 0 ? (
+        <>
+          {/* 3개 지표 카드 통합 */}
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryValue}>{stats.avgFatigue}%</Text>
+              <Text style={styles.summaryLabel}>평균</Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryItem}>
+              <Text style={[styles.summaryValue, {color: COLORS.fatigue.exhausted}]}>
+                {stats.maxFatigue}%
+              </Text>
+              <Text style={styles.summaryLabel}>최고</Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryItem}>
+              <Text style={[styles.summaryValue, {color: COLORS.fatigue.excellent}]}>
+                {stats.minFatigue}%
+              </Text>
+              <Text style={styles.summaryLabel}>최저</Text>
+            </View>
+          </View>
+
+          {/* 주간 인사이트 */}
+          <View style={styles.insightCard}>
+            <Text style={styles.insightTitle}>주간 인사이트</Text>
+            {[
+              {icon: '🌙', text: `평균 수면 ${stats.avgSleep}시간`},
+              {icon: '👟', text: `평균 걸음수 ${stats.avgSteps.toLocaleString()}보`},
+              {icon: '📅', text: `가장 피곤한 요일: ${stats.worstDay}`},
+            ].map((item, idx) => (
+              <View key={idx} style={styles.insightRow}>
+                <Text style={styles.insightIcon}>{item.icon}</Text>
+                <Text style={styles.insightText}>{item.text}</Text>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyIcon}>📊</Text>
+          <Text style={styles.emptyTitle}>아직 데이터가 부족해요</Text>
+          <Text style={styles.emptyDesc}>
+            매일 사용하면 여기에 주간 통계가 표시됩니다
+          </Text>
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -206,116 +198,104 @@ const StatsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: COLORS.background,
   },
   content: {
-    padding: 20,
+    padding: SPACING.screenPadding,
     paddingTop: 60,
     paddingBottom: 40,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    ...TYPOGRAPHY.title,
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#888',
+    ...TYPOGRAPHY.subtitle,
     marginBottom: 24,
   },
+
+  // 차트 카드
   chartCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.cardLarge,
+    padding: SPACING.cardPadding,
     alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    marginBottom: SPACING.sectionGap,
+    ...SHADOWS.card,
   },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-  },
+
+  // 요약 카드 (3개 통합)
   summaryCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: 20,
+    marginBottom: SPACING.sectionGap,
+    ...SHADOWS.card,
+  },
+  summaryItem: {
     flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+  },
+  summaryDivider: {
+    width: 1,
+    backgroundColor: COLORS.divider,
+    marginVertical: 4,
   },
   summaryValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 26,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
   },
   summaryLabel: {
-    fontSize: 11,
-    color: '#888',
+    ...TYPOGRAPHY.small,
     marginTop: 4,
   },
-  detailCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+
+  // 인사이트 카드
+  insightCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.cardPadding,
+    ...SHADOWS.card,
   },
-  detailTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+  insightTitle: {
+    ...TYPOGRAPHY.heading,
     marginBottom: 16,
   },
-  detailRow: {
+  insightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
-  detailEmoji: {
-    fontSize: 20,
+  insightIcon: {
+    fontSize: 18,
     marginRight: 12,
   },
-  detailText: {
-    fontSize: 15,
-    color: '#555',
+  insightText: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.textSecondary,
   },
+
+  // 빈 상태
   emptyCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 40,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.cardLarge,
+    padding: 48,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    ...SHADOWS.card,
   },
-  emptyEmoji: {
+  emptyIcon: {
     fontSize: 48,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    ...TYPOGRAPHY.heading,
     marginBottom: 8,
   },
   emptyDesc: {
-    fontSize: 14,
-    color: '#888',
+    ...TYPOGRAPHY.body,
+    color: COLORS.textSecondary,
     textAlign: 'center',
   },
 });

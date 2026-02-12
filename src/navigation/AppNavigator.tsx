@@ -1,18 +1,20 @@
 /**
  * 앱 네비게이션 설정
  * Bottom Tab (홈, 통계, 설정) + Stack (모달/상세)
+ * V4 트렌디 UI
  */
 
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {Text} from 'react-native';
+import {View, Text, StyleSheet} from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import AddActivityScreen from '../screens/AddActivityScreen';
 import DetailsScreen from '../screens/DetailsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StatsScreen from '../screens/StatsScreen';
+import {COLORS} from '../utils/theme';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -29,8 +31,17 @@ export type TabParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-const TabIcon = ({label, focused}: {label: string; focused: boolean}) => (
-  <Text style={{fontSize: 22, opacity: focused ? 1 : 0.4}}>{label}</Text>
+const TabIcon = ({
+  label,
+  focused,
+}: {
+  label: string;
+  focused: boolean;
+}) => (
+  <View style={tabStyles.iconContainer}>
+    <Text style={[tabStyles.icon, {opacity: focused ? 1 : 0.4}]}>{label}</Text>
+    {focused && <View style={tabStyles.dot} />}
+  </View>
 );
 
 const MainTabs: React.FC = () => {
@@ -39,15 +50,19 @@ const MainTabs: React.FC = () => {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: 'white',
-          borderTopWidth: 1,
-          borderTopColor: '#E8E8E8',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderTopWidth: 0,
           paddingBottom: 8,
           paddingTop: 8,
-          height: 60,
+          height: 65,
+          shadowColor: '#000',
+          shadowOffset: {width: 0, height: -4},
+          shadowOpacity: 0.06,
+          shadowRadius: 12,
+          elevation: 8,
         },
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: COLORS.accent,
+        tabBarInactiveTintColor: COLORS.textTertiary,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
@@ -81,17 +96,33 @@ const MainTabs: React.FC = () => {
   );
 };
 
+const tabStyles = StyleSheet.create({
+  iconContainer: {
+    alignItems: 'center',
+  },
+  icon: {
+    fontSize: 22,
+  },
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.accent,
+    marginTop: 2,
+  },
+});
+
 const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#007AFF',
+            backgroundColor: COLORS.accent,
           },
-          headerTintColor: '#fff',
+          headerTintColor: COLORS.white,
           headerTitleStyle: {
-            fontWeight: 'bold',
+            fontWeight: '600',
           },
         }}>
         <Stack.Screen

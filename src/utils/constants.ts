@@ -96,15 +96,15 @@ export const FATIGUE_LEVEL_INFO: Record<FatigueLevel, FatigueLevelInfo> = {
     range: [0, 25],
     displayName: '완전 충전',
     emoji: '🔋',
-    color: '#4CAF50',
-    message: '최상의 컨디션입니다! 💪',
+    color: '#00C7BE',
+    message: '최상의 컨디션입니다!',
   },
   [FatigueLevel.GOOD]: {
     level: FatigueLevel.GOOD,
     range: [26, 50],
     displayName: '양호',
     emoji: '😊',
-    color: '#8BC34A',
+    color: '#5856D6',
     message: '좋은 상태입니다. 이대로 유지하세요!',
   },
   [FatigueLevel.TIRED]: {
@@ -112,7 +112,7 @@ export const FATIGUE_LEVEL_INFO: Record<FatigueLevel, FatigueLevelInfo> = {
     range: [51, 75],
     displayName: '피곤함',
     emoji: '😓',
-    color: '#FF9800',
+    color: '#FF9F0A',
     message: '휴식이 필요합니다. 잠시 쉬어가세요.',
   },
   [FatigueLevel.EXHAUSTED]: {
@@ -120,8 +120,8 @@ export const FATIGUE_LEVEL_INFO: Record<FatigueLevel, FatigueLevelInfo> = {
     range: [76, 100],
     displayName: '탈진',
     emoji: '🚨',
-    color: '#F44336',
-    message: '위험 수준! 즉시 휴식하세요! ⚠️',
+    color: '#FF453A',
+    message: '위험 수준! 즉시 휴식하세요!',
   },
 };
 

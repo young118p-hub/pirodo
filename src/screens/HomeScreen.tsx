@@ -1,5 +1,6 @@
 /**
- * 홈 화면 - 도넛 차트 + 핵심 지표 + 회복 추천 + 퀵버튼
+ * 홈 화면 - 워치 게이지 + 핵심 지표 + 회복 추천 + 퀵버튼
+ * V4 트렌디 UI
  */
 
 import React, {useState} from 'react';
@@ -21,6 +22,7 @@ import {
 } from '../utils/constants';
 import {InputMode, ActivityType} from '../types';
 import {getRecoveryTips} from '../utils/recoveryEngine';
+import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 interface HomeScreenProps {
   navigation: any;
@@ -46,7 +48,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={COLORS.accent} />
         <Text style={styles.loadingText}>로딩 중...</Text>
       </View>
     );
@@ -56,10 +58,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   const levelInfo = FATIGUE_LEVEL_INFO[level];
 
   const getSliderColor = (value: number) => {
-    if (value <= 25) return '#4CAF50';
-    if (value <= 50) return '#8BC34A';
-    if (value <= 75) return '#FF9800';
-    return '#F44336';
+    if (value <= 25) return COLORS.fatigue.excellent;
+    if (value <= 50) return COLORS.fatigue.good;
+    if (value <= 75) return COLORS.fatigue.tired;
+    return COLORS.fatigue.exhausted;
   };
 
   const formatSleepHours = () => {
@@ -74,31 +76,35 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
     fatiguePercentage,
     healthData,
     dailyData.activities,
-  );
+  ).slice(0, 2); // 최대 2개만
 
-  // 퀵버튼 핸들러
-  const handleQuickAdd = (type: ActivityType, label: string) => {
+  const handleQuickAdd = (type: ActivityType) => {
     const duration = type === ActivityType.WATER ? 1 : 30;
     addActivity(type, duration);
   };
 
+  const dateString = new Date(dailyData.date).toLocaleDateString('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  });
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}>
       {/* 헤더 */}
       <View style={styles.header}>
         <Text style={styles.title}>피로도</Text>
-        <Text style={styles.date}>
-          {new Date(dailyData.date).toLocaleDateString('ko-KR', {
-            month: 'long',
-            day: 'numeric',
-            weekday: 'short',
-          })}
-        </Text>
+        <View style={styles.datePill}>
+          <Text style={styles.dateText}>{dateString}</Text>
+        </View>
       </View>
 
-      {/* Tier C: 슬라이더 */}
+      {/* 슬라이더 (Manual 모드) */}
       {inputMode === InputMode.MANUAL && (
-        <View style={styles.sliderContainer}>
+        <View style={styles.sliderCard}>
           <Text style={styles.sliderLabel}>지금 컨디션 어때?</Text>
           <Slider
             style={styles.slider}
@@ -112,66 +118,76 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
               setManualSliderValue(value);
             }}
             minimumTrackTintColor={getSliderColor(sliderValue)}
-            maximumTrackTintColor="#E0E0E0"
+            maximumTrackTintColor={COLORS.gaugeBackground}
             thumbTintColor={getSliderColor(sliderValue)}
           />
           <View style={styles.sliderLabels}>
-            <Text style={styles.sliderLabelText}>컨디션 최고</Text>
-            <Text style={styles.sliderValueText}>{Math.round(sliderValue)}%</Text>
-            <Text style={styles.sliderLabelText}>완전 탈진</Text>
+            <Text style={styles.sliderLabelText}>최고</Text>
+            <Text style={[styles.sliderValueText, {color: getSliderColor(sliderValue)}]}>
+              {Math.round(sliderValue)}%
+            </Text>
+            <Text style={styles.sliderLabelText}>탈진</Text>
           </View>
         </View>
       )}
 
-      {/* 도넛 차트 */}
-      <View style={styles.circleContainer}>
-        <FatigueCircle percentage={fatiguePercentage} size={220} />
+      {/* 메인 게이지 카드 */}
+      <View style={styles.gaugeCard}>
+        <FatigueCircle percentage={fatiguePercentage} size={240} />
         <Text style={styles.fatigueMessage}>{fatigueMessage}</Text>
+        <View style={styles.sourceBadge}>
+          <Text style={styles.sourceBadgeText}>
+            {INPUT_MODE_INFO[inputMode].emoji} {dataSourceLabel}
+          </Text>
+        </View>
       </View>
 
-      {/* 핵심 지표 행 (급여앱 스타일) */}
-      <View style={styles.metricsCard}>
-        <View style={styles.metricItem}>
-          <Text style={styles.metricLabel}>
-            {inputMode === InputMode.MANUAL ? '활동' : '걸음수'}
-          </Text>
+      {/* 핵심 지표 3개 */}
+      <View style={styles.metricsRow}>
+        <View style={[styles.metricCard, {backgroundColor: COLORS.metricBg.steps}]}>
+          <Text style={styles.metricIcon}>👟</Text>
           <Text style={styles.metricValue}>
             {inputMode === InputMode.MANUAL
               ? dailyData.activities.length
               : healthData?.stepCount?.toLocaleString() ?? '--'}
           </Text>
-        </View>
-        <View style={styles.metricDivider} />
-        <View style={styles.metricItem}>
-          <Text style={styles.metricLabel}>수면</Text>
-          <Text style={styles.metricValue}>{formatSleepHours()}</Text>
-        </View>
-        <View style={styles.metricDivider} />
-        <View style={styles.metricItem}>
           <Text style={styles.metricLabel}>
-            {healthData?.heartRate != null ? '심박수' : '앉아있기'}
+            {inputMode === InputMode.MANUAL ? '활동' : '걸음'}
+          </Text>
+        </View>
+
+        <View style={[styles.metricCard, {backgroundColor: COLORS.metricBg.sleep}]}>
+          <Text style={styles.metricIcon}>🌙</Text>
+          <Text style={styles.metricValue}>{formatSleepHours()}</Text>
+          <Text style={styles.metricLabel}>수면</Text>
+        </View>
+
+        <View style={[styles.metricCard, {backgroundColor: healthData?.heartRate != null ? COLORS.metricBg.heart : COLORS.metricBg.sitting}]}>
+          <Text style={styles.metricIcon}>
+            {healthData?.heartRate != null ? '❤️' : '🪑'}
           </Text>
           <Text style={styles.metricValue}>
             {healthData?.heartRate != null
-              ? `${healthData.heartRate} bpm`
+              ? `${healthData.heartRate}`
               : `${healthData?.sedentaryMinutes ?? 0}분`}
           </Text>
+          <Text style={styles.metricLabel}>
+            {healthData?.heartRate != null ? 'bpm' : '앉아있기'}
+          </Text>
         </View>
-      </View>
-
-      {/* 데이터 소스 */}
-      <View style={styles.sourceBadge}>
-        <Text style={styles.sourceBadgeText}>
-          {INPUT_MODE_INFO[inputMode].emoji} {dataSourceLabel}
-        </Text>
       </View>
 
       {/* 회복 추천 */}
       {recoveryTips.length > 0 && (
-        <View style={styles.tipsContainer}>
+        <View style={styles.tipsCard}>
           <Text style={styles.tipsTitle}>회복 추천</Text>
           {recoveryTips.map((tip, index) => (
-            <View key={index} style={styles.tipItem}>
+            <View
+              key={index}
+              style={[
+                styles.tipItem,
+                index < recoveryTips.length - 1 && styles.tipItemBorder,
+              ]}>
               <Text style={styles.tipEmoji}>{tip.emoji}</Text>
               <View style={styles.tipContent}>
                 <Text style={styles.tipTitle}>{tip.title}</Text>
@@ -183,46 +199,41 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       )}
 
       {/* 퀵 버튼 */}
-      <View style={styles.quickButtonsContainer}>
+      <View style={styles.quickSection}>
         <Text style={styles.quickTitle}>빠른 기록</Text>
-        <View style={styles.quickButtonRow}>
-          <TouchableOpacity
-            style={styles.quickButton}
-            onPress={() => handleQuickAdd(ActivityType.CAFFEINE, '커피')}>
-            <Text style={styles.quickEmoji}>☕</Text>
-            <Text style={styles.quickLabel}>커피</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.quickButton}
-            onPress={() => handleQuickAdd(ActivityType.WATER, '물')}>
-            <Text style={styles.quickEmoji}>💧</Text>
-            <Text style={styles.quickLabel}>물</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.quickButton}
-            onPress={() => handleQuickAdd(ActivityType.REST, '휴식')}>
-            <Text style={styles.quickEmoji}>🛋️</Text>
-            <Text style={styles.quickLabel}>휴식</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.quickButton}
-            onPress={() => handleQuickAdd(ActivityType.EXERCISE, '운동')}>
-            <Text style={styles.quickEmoji}>🏃</Text>
-            <Text style={styles.quickLabel}>운동</Text>
-          </TouchableOpacity>
+        <View style={styles.quickRow}>
+          {[
+            {type: ActivityType.CAFFEINE, icon: '☕', label: '커피'},
+            {type: ActivityType.WATER, icon: '💧', label: '물'},
+            {type: ActivityType.REST, icon: '🛋️', label: '휴식'},
+            {type: ActivityType.EXERCISE, icon: '🏃', label: '운동'},
+          ].map((item) => (
+            <TouchableOpacity
+              key={item.type}
+              style={styles.quickButton}
+              onPress={() => handleQuickAdd(item.type)}
+              activeOpacity={0.6}>
+              <View style={styles.quickIconCircle}>
+                <Text style={styles.quickIcon}>{item.icon}</Text>
+              </View>
+              <Text style={styles.quickLabel}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
-      {/* 상세 버튼 */}
+      {/* 하단 액션 버튼 */}
       <View style={styles.actionButtons}>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => navigation.navigate('AddActivity')}>
+          onPress={() => navigation.navigate('AddActivity')}
+          activeOpacity={0.7}>
           <Text style={styles.addButtonText}>+ 활동 추가</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.detailButton}
-          onPress={() => navigation.navigate('Details')}>
+          onPress={() => navigation.navigate('Details')}
+          activeOpacity={0.7}>
           <Text style={styles.detailButtonText}>상세 보기</Text>
         </TouchableOpacity>
       </View>
@@ -233,10 +244,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: COLORS.background,
   },
   content: {
-    padding: 20,
+    padding: SPACING.screenPadding,
     paddingTop: 60,
     paddingBottom: 30,
   },
@@ -244,43 +255,45 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: COLORS.background,
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
+    marginTop: 12,
+    ...TYPOGRAPHY.body,
+    color: COLORS.textSecondary,
   },
+
   // 헤더
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    ...TYPOGRAPHY.title,
   },
-  date: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 4,
+  datePill: {
+    backgroundColor: COLORS.accentLight,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
+  dateText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.accent,
+  },
+
   // 슬라이더
-  sliderContainer: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
+  sliderCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.cardPadding,
+    marginBottom: SPACING.sectionGap,
+    ...SHADOWS.card,
   },
   sliderLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    ...TYPOGRAPHY.heading,
     textAlign: 'center',
     marginBottom: 12,
   },
@@ -295,98 +308,92 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sliderLabelText: {
-    fontSize: 11,
-    color: '#999',
+    ...TYPOGRAPHY.small,
   },
   sliderValueText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 15,
+    fontWeight: '700',
   },
-  // 도넛 차트
-  circleContainer: {
+
+  // 메인 게이지 카드
+  gaugeCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.cardLarge,
+    padding: 28,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: SPACING.sectionGap,
+    ...SHADOWS.card,
   },
   fatigueMessage: {
-    fontSize: 16,
-    color: '#666',
+    ...TYPOGRAPHY.body,
+    color: COLORS.textSecondary,
     marginTop: 12,
     textAlign: 'center',
   },
+  sourceBadge: {
+    backgroundColor: COLORS.accentLight,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginTop: 10,
+  },
+  sourceBadgeText: {
+    ...TYPOGRAPHY.small,
+    color: COLORS.accent,
+  },
+
   // 핵심 지표
-  metricsCard: {
+  metricsRow: {
     flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    gap: 10,
+    marginBottom: SPACING.sectionGap,
   },
-  metricItem: {
+  metricCard: {
     flex: 1,
+    borderRadius: RADIUS.card,
+    padding: 16,
     alignItems: 'center',
+    ...SHADOWS.subtle,
   },
-  metricLabel: {
-    fontSize: 12,
-    color: '#888',
-    marginBottom: 4,
+  metricIcon: {
+    fontSize: 22,
+    marginBottom: 6,
   },
   metricValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#333',
+    color: COLORS.textPrimary,
+    marginBottom: 2,
   },
-  metricDivider: {
-    width: 1,
-    backgroundColor: '#E8E8E8',
-    marginVertical: 4,
+  metricLabel: {
+    ...TYPOGRAPHY.small,
   },
-  // 소스 뱃지
-  sourceBadge: {
-    alignSelf: 'center',
-    backgroundColor: '#E8F0FE',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    marginBottom: 20,
-  },
-  sourceBadgeText: {
-    fontSize: 12,
-    color: '#1967D2',
-    fontWeight: '500',
-  },
+
   // 회복 추천
-  tipsContainer: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+  tipsCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.cardPadding,
+    marginBottom: SPACING.sectionGap,
+    ...SHADOWS.card,
   },
   tipsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
+    ...TYPOGRAPHY.heading,
+    marginBottom: 14,
   },
   tipItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 10,
+    paddingVertical: 10,
+  },
+  tipItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
   },
   tipEmoji: {
     fontSize: 20,
-    marginRight: 10,
-    marginTop: 2,
+    marginRight: 12,
+    marginTop: 1,
   },
   tipContent: {
     flex: 1,
@@ -394,77 +401,76 @@ const styles = StyleSheet.create({
   tipTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: COLORS.textPrimary,
     marginBottom: 2,
   },
   tipDesc: {
     fontSize: 13,
-    color: '#666',
+    color: COLORS.textSecondary,
     lineHeight: 18,
   },
+
   // 퀵 버튼
-  quickButtonsContainer: {
-    marginBottom: 16,
+  quickSection: {
+    marginBottom: SPACING.sectionGap,
   },
   quickTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
+    ...TYPOGRAPHY.heading,
+    marginBottom: 12,
   },
-  quickButtonRow: {
+  quickRow: {
     flexDirection: 'row',
-    gap: 10,
+    justifyContent: 'space-around',
   },
   quickButton: {
-    flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 14,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 2,
   },
-  quickEmoji: {
+  quickIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    ...SHADOWS.subtle,
+  },
+  quickIcon: {
     fontSize: 24,
-    marginBottom: 4,
   },
   quickLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#555',
+    ...TYPOGRAPHY.small,
+    color: COLORS.textSecondary,
   },
-  // 하단 버튼
+
+  // 하단 액션 버튼
   actionButtons: {
     flexDirection: 'row',
     gap: 12,
   },
   addButton: {
     flex: 1,
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingVertical: 14,
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.small,
+    paddingVertical: 15,
     alignItems: 'center',
   },
   addButtonText: {
-    color: 'white',
+    color: COLORS.white,
     fontSize: 15,
     fontWeight: '600',
   },
   detailButton: {
     flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    paddingVertical: 14,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.small,
+    paddingVertical: 15,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#007AFF',
+    borderColor: COLORS.accent,
   },
   detailButtonText: {
-    color: '#007AFF',
+    color: COLORS.accent,
     fontSize: 15,
     fontWeight: '600',
   },
