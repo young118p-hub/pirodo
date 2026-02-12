@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {DailyHistoryRecord} from '../types';
 
 const HISTORY_KEY = '@pirodo_history';
-const MAX_DAYS = 30;
+const MAX_DAYS = 90; // 3개월 보관
 
 export class HistoryService {
   /**
@@ -68,6 +68,45 @@ export class HistoryService {
     }
 
     return result;
+  }
+
+  /**
+   * 최근 30일 히스토리 조회 (빈 날짜는 null)
+   */
+  static async getMonthlyHistory(): Promise<(DailyHistoryRecord | null)[]> {
+    const history = await this.getHistory();
+    const result: (DailyHistoryRecord | null)[] = [];
+
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const record = history.find(h => h.date === dateStr);
+      result.push(record ?? null);
+    }
+
+    return result;
+  }
+
+  /**
+   * 시간대별 피로도 패턴 조회 (최근 7일 활동 기록 기반)
+   */
+  static getHourlyPattern(
+    activities: Array<{timestamp: Date; type: string; durationMinutes: number}>,
+  ): number[] {
+    // 24시간 슬롯: 각 시간대에 기록된 활동의 피로 가중치 합산
+    const hourlyImpact = new Array(24).fill(0);
+    const hourlyCounts = new Array(24).fill(0);
+
+    for (const act of activities) {
+      const hour = new Date(act.timestamp).getHours();
+      hourlyCounts[hour] += 1;
+      // 피로 증가 활동이면 양수, 회복이면 음수
+      const isFatigue = ['WORK', 'SCREEN_TIME', 'SITTING', 'STRESS', 'CAFFEINE'].includes(act.type);
+      hourlyImpact[hour] += isFatigue ? act.durationMinutes : -act.durationMinutes * 0.5;
+    }
+
+    return hourlyImpact;
   }
 
   /**

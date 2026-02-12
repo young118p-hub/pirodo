@@ -193,11 +193,12 @@ export const INPUT_MODE_INFO: Record<InputMode, {
 /**
  * 기본 설정값
  */
-export const DEFAULT_SETTINGS = {
-  inputMode: InputMode.MANUAL as InputMode,
+export const DEFAULT_SETTINGS: import('../types').AppSettings = {
+  inputMode: InputMode.MANUAL,
   enableSedentaryDetection: true,
   sedentaryThresholdMinutes: 30,
   enableNotifications: true,
   daytimeStartHour: 8,
   daytimeEndHour: 22,
+  onboardingComplete: false,
 };

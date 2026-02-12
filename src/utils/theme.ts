@@ -1,50 +1,94 @@
 /**
  * Pirodo V4 디자인 시스템
- * 통일된 색상, 그림자, 간격 상수
+ * 통일된 색상, 그림자, 간격 상수 (라이트/다크 모드)
  */
 
-export const COLORS = {
-  // 배경
+export interface ThemeColors {
+  background: string;
+  surface: string;
+  surfaceElevated: string;
+  textPrimary: string;
+  textSecondary: string;
+  textTertiary: string;
+  divider: string;
+  fatigue: {
+    excellent: string;
+    good: string;
+    tired: string;
+    exhausted: string;
+  };
+  gaugeBackground: string;
+  gaugeTick: string;
+  metricBg: {
+    steps: string;
+    sleep: string;
+    heart: string;
+    sitting: string;
+  };
+  accent: string;
+  accentLight: string;
+  white: string;
+  black: string;
+}
+
+export const LIGHT_COLORS: ThemeColors = {
   background: '#F2F4F8',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
-
-  // 텍스트
   textPrimary: '#1C1C1E',
   textSecondary: '#8E8E93',
   textTertiary: '#AEAEB2',
-
-  // 구분선
   divider: '#F0F0F5',
-
-  // 피로도 컬러 (배터리 초록과 차별화)
   fatigue: {
-    excellent: '#00C7BE', // 민트/시안
-    good: '#5856D6',      // 보라
-    tired: '#FF9F0A',     // 앰버
-    exhausted: '#FF453A', // 레드
+    excellent: '#00C7BE',
+    good: '#5856D6',
+    tired: '#FF9F0A',
+    exhausted: '#FF453A',
   },
-
-  // 게이지
   gaugeBackground: '#E5E5EA',
   gaugeTick: '#C7C7CC',
-
-  // 지표 카드 배경색 (10% 알파)
   metricBg: {
-    steps: '#F0F5FF',    // 블루 틴트
-    sleep: '#F3F0FF',    // 보라 틴트
-    heart: '#FFF0F0',    // 레드 틴트
-    sitting: '#FFF5EB',  // 앰버 틴트
+    steps: '#F0F5FF',
+    sleep: '#F3F0FF',
+    heart: '#FFF0F0',
+    sitting: '#FFF5EB',
   },
-
-  // 액센트
   accent: '#5856D6',
   accentLight: '#EEEDFC',
-
-  // 기타
   white: '#FFFFFF',
   black: '#000000',
 };
+
+export const DARK_COLORS: ThemeColors = {
+  background: '#0D0D0F',
+  surface: '#1C1C1E',
+  surfaceElevated: '#2C2C2E',
+  textPrimary: '#F5F5F7',
+  textSecondary: '#98989D',
+  textTertiary: '#636366',
+  divider: '#2C2C2E',
+  fatigue: {
+    excellent: '#00C7BE',
+    good: '#7B7AE0',
+    tired: '#FFB340',
+    exhausted: '#FF6961',
+  },
+  gaugeBackground: '#3A3A3C',
+  gaugeTick: '#48484A',
+  metricBg: {
+    steps: '#1A1F2E',
+    sleep: '#1E1A2E',
+    heart: '#2E1A1A',
+    sitting: '#2E2418',
+  },
+  accent: '#7B7AE0',
+  accentLight: '#28274A',
+  white: '#FFFFFF',
+  black: '#000000',
+};
+
+// 기본값 (라이트) - 하위 호환
+export const COLORS = LIGHT_COLORS;
 
 export const SHADOWS = {
   card: {
@@ -58,6 +102,30 @@ export const SHADOWS = {
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  none: {
+    shadowColor: 'transparent',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+};
+
+export const DARK_SHADOWS = {
+  card: {
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  subtle: {
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 2,
   },

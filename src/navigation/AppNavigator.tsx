@@ -8,12 +8,15 @@ import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import AddActivityScreen from '../screens/AddActivityScreen';
 import DetailsScreen from '../screens/DetailsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StatsScreen from '../screens/StatsScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
+import {useSettings} from '../contexts/SettingsContext';
+import {useTheme} from '../contexts/ThemeContext';
 import {COLORS} from '../utils/theme';
 
 export type RootStackParamList = {
@@ -45,24 +48,25 @@ const TabIcon = ({
 );
 
 const MainTabs: React.FC = () => {
+  const {colors, isDark} = useTheme();
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          backgroundColor: isDark ? 'rgba(28, 28, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)',
           borderTopWidth: 0,
           paddingBottom: 8,
           paddingTop: 8,
           height: 65,
           shadowColor: '#000',
           shadowOffset: {width: 0, height: -4},
-          shadowOpacity: 0.06,
+          shadowOpacity: isDark ? 0.3 : 0.06,
           shadowRadius: 12,
           elevation: 8,
         },
-        tabBarActiveTintColor: COLORS.accent,
-        tabBarInactiveTintColor: COLORS.textTertiary,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textTertiary,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
@@ -113,14 +117,29 @@ const tabStyles = StyleSheet.create({
 });
 
 const AppNavigator: React.FC = () => {
+  const {settings, isLoading, completeOnboarding} = useSettings();
+  const {colors} = useTheme();
+
+  if (isLoading) {
+    return (
+      <View style={[loadingStyles.container, {backgroundColor: colors.background}]}>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </View>
+    );
+  }
+
+  if (!settings.onboardingComplete) {
+    return <OnboardingScreen onComplete={completeOnboarding} />;
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: COLORS.accent,
+            backgroundColor: colors.accent,
           },
-          headerTintColor: COLORS.white,
+          headerTintColor: colors.white,
           headerTitleStyle: {
             fontWeight: '600',
           },
@@ -149,5 +168,14 @@ const AppNavigator: React.FC = () => {
     </NavigationContainer>
   );
 };
+
+const loadingStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+});
 
 export default AppNavigator;

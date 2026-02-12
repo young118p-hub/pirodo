@@ -20,6 +20,7 @@ import {
 } from '../utils/constants';
 import {InputMode, ActivityType} from '../types';
 import {getRecoveryTips} from '../utils/recoveryEngine';
+import RecoveryCard from '../components/RecoveryCard';
 import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 interface HomeScreenProps {
@@ -172,23 +173,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
         </View>
       </View>
 
-      {/* 회복 추천 */}
+      {/* 회복 추천 (액션 카드) */}
       {recoveryTips.length > 0 && (
-        <View style={styles.tipsCard}>
+        <View style={styles.tipsSection}>
           <Text style={styles.tipsTitle}>회복 추천</Text>
           {recoveryTips.map((tip, index) => (
-            <View
+            <RecoveryCard
               key={index}
-              style={[
-                styles.tipItem,
-                index < recoveryTips.length - 1 && styles.tipItemBorder,
-              ]}>
-              <Text style={styles.tipEmoji}>{tip.emoji}</Text>
-              <View style={styles.tipContent}>
-                <Text style={styles.tipTitle}>{tip.title}</Text>
-                <Text style={styles.tipDesc}>{tip.description}</Text>
-              </View>
-            </View>
+              tip={tip}
+              onQuickAdd={(type, duration) => addActivity(type, duration)}
+            />
           ))}
         </View>
       )}
@@ -365,44 +359,12 @@ const styles = StyleSheet.create({
   },
 
   // 회복 추천
-  tipsCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: SPACING.cardPadding,
+  tipsSection: {
     marginBottom: SPACING.sectionGap,
-    ...SHADOWS.card,
   },
   tipsTitle: {
     ...TYPOGRAPHY.heading,
-    marginBottom: 14,
-  },
-  tipItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 10,
-  },
-  tipItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.divider,
-  },
-  tipEmoji: {
-    fontSize: 20,
-    marginRight: 12,
-    marginTop: 1,
-  },
-  tipContent: {
-    flex: 1,
-  },
-  tipTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 2,
-  },
-  tipDesc: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 18,
+    marginBottom: 12,
   },
 
   // 퀵 버튼

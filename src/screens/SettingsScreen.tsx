@@ -3,7 +3,7 @@
  * V4 트렌디 UI
  */
 
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -11,14 +11,72 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
+  Alert,
+  TextInput,
+  Modal,
 } from 'react-native';
 import {InputMode} from '../types';
 import {INPUT_MODE_INFO} from '../utils/constants';
 import {useSettings} from '../contexts/SettingsContext';
+import {useTheme} from '../contexts/ThemeContext';
+import {BackupService} from '../services/BackupService';
 import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
+
+const THEME_OPTIONS = [
+  {value: 'system' as const, label: '시스템 설정', emoji: '📱'},
+  {value: 'light' as const, label: '라이트', emoji: '☀️'},
+  {value: 'dark' as const, label: '다크', emoji: '🌙'},
+];
 
 const SettingsScreen: React.FC = () => {
   const {settings, updateSettings, setInputMode} = useSettings();
+  const {themeMode, setThemeMode, colors} = useTheme();
+  const [dataSummary, setDataSummary] = useState({totalKeys: 0, historyDays: 0, settingsExist: false});
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importText, setImportText] = useState('');
+
+  useEffect(() => {
+    BackupService.getDataSummary().then(setDataSummary);
+  }, []);
+
+  const handleExport = async () => {
+    const success = await BackupService.shareBackup();
+    if (!success) {
+      Alert.alert('오류', '백업 내보내기에 실패했습니다.');
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importText.trim()) {
+      Alert.alert('오류', 'JSON 데이터를 입력해주세요.');
+      return;
+    }
+    const result = await BackupService.importData(importText);
+    setImportModalVisible(false);
+    setImportText('');
+    Alert.alert(result.success ? '복원 완료' : '오류', result.message);
+    if (result.success) {
+      BackupService.getDataSummary().then(setDataSummary);
+    }
+  };
+
+  const handleReset = () => {
+    Alert.alert(
+      '데이터 초기화',
+      '모든 피로도 데이터가 삭제됩니다. 되돌릴 수 없습니다.',
+      [
+        {text: '취소', style: 'cancel'},
+        {
+          text: '초기화',
+          style: 'destructive',
+          onPress: async () => {
+            await BackupService.clearAllData();
+            Alert.alert('완료', '모든 데이터가 초기화되었습니다. 앱을 재시작하세요.');
+          },
+        },
+      ],
+    );
+  };
 
   const renderModeCard = (mode: InputMode) => {
     const info = INPUT_MODE_INFO[mode];
@@ -71,6 +129,29 @@ const SettingsScreen: React.FC = () => {
       </Text>
 
       {[InputMode.WATCH, InputMode.PHONE, InputMode.MANUAL].map(renderModeCard)}
+
+      {/* 테마 설정 */}
+      <Text style={[styles.sectionTitle, {marginTop: 32}]}>화면 테마</Text>
+      <View style={styles.themeRow}>
+        {THEME_OPTIONS.map(opt => (
+          <TouchableOpacity
+            key={opt.value}
+            style={[
+              styles.themeOption,
+              themeMode === opt.value && styles.themeOptionSelected,
+            ]}
+            onPress={() => setThemeMode(opt.value)}
+            activeOpacity={0.7}>
+            <Text style={styles.themeEmoji}>{opt.emoji}</Text>
+            <Text style={[
+              styles.themeLabel,
+              themeMode === opt.value && styles.themeLabelSelected,
+            ]}>
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {settings.inputMode !== InputMode.MANUAL && (
         <>
@@ -126,6 +207,72 @@ const SettingsScreen: React.FC = () => {
           </View>
         </>
       )}
+
+      {/* 데이터 관리 섹션 */}
+      <Text style={[styles.sectionTitle, {marginTop: 32}]}>데이터 관리</Text>
+      <Text style={styles.sectionSubtitle}>
+        {dataSummary.historyDays}일치 기록 보관 중
+      </Text>
+
+      <View style={styles.settingCard}>
+        <TouchableOpacity style={styles.settingRow} onPress={handleExport} activeOpacity={0.6}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingLabel}>📤 백업 내보내기</Text>
+            <Text style={styles.settingDescription}>JSON 파일로 데이터 공유</Text>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.settingDivider} />
+
+        <TouchableOpacity style={styles.settingRow} onPress={() => setImportModalVisible(true)} activeOpacity={0.6}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingLabel}>📥 백업 복원</Text>
+            <Text style={styles.settingDescription}>JSON 데이터로 복원</Text>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.settingDivider} />
+
+        <TouchableOpacity style={styles.settingRow} onPress={handleReset} activeOpacity={0.6}>
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, {color: COLORS.fatigue.exhausted}]}>🗑️ 데이터 초기화</Text>
+            <Text style={styles.settingDescription}>모든 기록 삭제</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* 복원 모달 */}
+      <Modal visible={importModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>백업 복원</Text>
+            <Text style={styles.modalSubtitle}>백업 JSON 데이터를 붙여넣으세요</Text>
+            <TextInput
+              style={styles.importInput}
+              multiline
+              placeholder='{"version":1,"appName":"pirodo",...}'
+              placeholderTextColor={COLORS.textTertiary}
+              value={importText}
+              onChangeText={setImportText}
+              textAlignVertical="top"
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {setImportModalVisible(false); setImportText('');}}
+                activeOpacity={0.7}>
+                <Text style={styles.modalCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirmButton}
+                onPress={handleImport}
+                activeOpacity={0.7}>
+                <Text style={styles.modalConfirmText}>복원</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -222,6 +369,39 @@ const styles = StyleSheet.create({
     color: COLORS.accent,
   },
 
+  // 테마 선택
+  themeRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  themeOption: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    ...SHADOWS.subtle,
+  },
+  themeOptionSelected: {
+    borderColor: COLORS.accent,
+    backgroundColor: COLORS.accentLight,
+  },
+  themeEmoji: {
+    fontSize: 24,
+    marginBottom: 6,
+  },
+  themeLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  themeLabelSelected: {
+    color: COLORS.accent,
+  },
+
   // 설정 카드 (통합)
   settingCard: {
     backgroundColor: COLORS.surface,
@@ -252,6 +432,66 @@ const styles = StyleSheet.create({
   settingDescription: {
     ...TYPOGRAPHY.caption,
     marginTop: 2,
+  },
+
+  // 모달
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: SPACING.cardPadding,
+  },
+  modalTitle: {
+    ...TYPOGRAPHY.heading,
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    ...TYPOGRAPHY.caption,
+    marginBottom: 14,
+  },
+  importInput: {
+    backgroundColor: COLORS.background,
+    borderRadius: RADIUS.small,
+    padding: 12,
+    minHeight: 150,
+    fontSize: 12,
+    color: COLORS.textPrimary,
+    fontFamily: 'monospace',
+    marginBottom: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: RADIUS.small,
+    backgroundColor: COLORS.background,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  modalConfirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: RADIUS.small,
+    backgroundColor: COLORS.accent,
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.white,
   },
 });
 

@@ -119,6 +119,7 @@ export interface AppSettings {
   enableNotifications: boolean;
   daytimeStartHour: number;
   daytimeEndHour: number;
+  onboardingComplete: boolean;
 }
 
 /**
@@ -187,4 +188,13 @@ export interface RecoveryTip {
   title: string;
   description: string;
   priority: number;
+  action?: RecoveryAction;
+}
+
+export interface RecoveryAction {
+  label: string;
+  type: 'timer' | 'quick_add' | 'link';
+  timerMinutes?: number;
+  activityType?: ActivityType;
+  activityDuration?: number;
 }

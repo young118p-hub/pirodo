@@ -14,6 +14,7 @@ interface SettingsContextType {
   isLoading: boolean;
   updateSettings: (partial: Partial<AppSettings>) => void;
   setInputMode: (mode: InputMode) => void;
+  completeOnboarding: () => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -61,8 +62,12 @@ export const SettingsProvider: React.FC<{children: React.ReactNode}> = ({childre
     updateSettings({inputMode: mode});
   }, [updateSettings]);
 
+  const completeOnboarding = useCallback(() => {
+    updateSettings({onboardingComplete: true});
+  }, [updateSettings]);
+
   return (
-    <SettingsContext.Provider value={{settings, isLoading, updateSettings, setInputMode}}>
+    <SettingsContext.Provider value={{settings, isLoading, updateSettings, setInputMode, completeOnboarding}}>
       {children}
     </SettingsContext.Provider>
   );

@@ -35,7 +35,9 @@ import {SedentaryDetector} from '../services/SedentaryDetector';
 import {SleepEstimator} from '../services/SleepEstimator';
 import {HistoryService} from '../services/HistoryService';
 import {NotificationService} from '../services/NotificationService';
+import {WidgetService} from '../services/WidgetService';
 import {DailyHistoryRecord} from '../types';
+import {getFatigueLevelFromPercentage, FATIGUE_LEVEL_INFO} from '../utils/constants';
 
 interface FatigueContextType {
   dailyData: DailyFatigueData;
@@ -448,6 +450,20 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
         NotificationService.checkSleepAlert(sleepInfo.totalMinutes / 60);
       }
     }
+
+    // 위젯 데이터 업데이트
+    const level = getFatigueLevelFromPercentage(calculated);
+    const levelInfo = FATIGUE_LEVEL_INFO[level];
+    const sleepInfo = healthData?.sleepData ?? healthData?.estimatedSleepData;
+    WidgetService.updateWidgetData({
+      fatiguePercentage: calculated,
+      fatigueLevel: levelInfo.displayName,
+      fatigueColor: levelInfo.color,
+      fatigueMessage: stats.fatigueMessage,
+      lastUpdated: new Date().toISOString(),
+      stepCount: healthData?.stepCount ?? 0,
+      sleepHours: sleepInfo ? Math.round((sleepInfo.totalMinutes / 60) * 10) / 10 : 0,
+    });
 
     setDailyData(prev => {
       const updated = {
