@@ -365,6 +365,19 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
     // 알림 체크
     if (settings.enableNotifications) {
       NotificationService.checkFatigueAlert(calculated);
+
+      // 앉아있기 알림
+      const totalSedentaryMin = sedentaryEvents.reduce(
+        (sum, e) => sum + e.durationMinutes,
+        0,
+      );
+      NotificationService.checkSedentaryAlert(totalSedentaryMin);
+
+      // 수면 부족 알림
+      const sleepInfo = healthData?.sleepData ?? healthData?.estimatedSleepData;
+      if (sleepInfo) {
+        NotificationService.checkSleepAlert(sleepInfo.totalMinutes / 60);
+      }
     }
 
     setDailyData(prev => {

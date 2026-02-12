@@ -1,5 +1,6 @@
 /**
  * 활동 추가 화면
+ * V4 트렌디 UI
  */
 
 import React, {useState} from 'react';
@@ -15,6 +16,7 @@ import {
 import {useFatigue} from '../contexts/FatigueContext';
 import {ActivityType, InputMode} from '../types';
 import {ACTIVITY_TYPE_INFO, INPUT_MODE_INFO} from '../utils/constants';
+import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 interface AddActivityScreenProps {
   navigation: any;
@@ -36,7 +38,6 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
     const hoursNum = parseInt(hours || '0');
     const minutesNum = parseInt(minutes || '0');
 
-    // 입력값 검증
     if (isNaN(hoursNum) || isNaN(minutesNum)) {
       Alert.alert('알림', '올바른 숫자를 입력해주세요.');
       return;
@@ -65,7 +66,6 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
     }
 
     if (totalMinutes > 1440) {
-      // 24시간 = 1440분
       Alert.alert('알림', '하루는 24시간(1440분)입니다.');
       return;
     }
@@ -76,7 +76,6 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
     ]);
   };
 
-  // 활동 타입을 피로/회복으로 그룹화
   const fatigueActivities = Object.values(ACTIVITY_TYPE_INFO).filter(
     info => !info.isRecovery,
   );
@@ -85,7 +84,7 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
         {/* 자동 추적 배너 */}
         {inputMode !== InputMode.MANUAL && (
@@ -115,7 +114,8 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
                   styles.activityCard,
                   selectedType === info.type && styles.activityCardSelected,
                 ]}
-                onPress={() => setSelectedType(info.type)}>
+                onPress={() => setSelectedType(info.type)}
+                activeOpacity={0.7}>
                 <Text style={styles.activityEmoji}>{info.emoji}</Text>
                 <Text style={styles.activityName}>{info.displayName}</Text>
               </TouchableOpacity>
@@ -133,10 +133,10 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
                 style={[
                   styles.activityCard,
                   styles.recoveryCard,
-                  selectedType === info.type &&
-                    styles.activityCardSelectedRecovery,
+                  selectedType === info.type && styles.activityCardSelectedRecovery,
                 ]}
-                onPress={() => setSelectedType(info.type)}>
+                onPress={() => setSelectedType(info.type)}
+                activeOpacity={0.7}>
                 <Text style={styles.activityEmoji}>{info.emoji}</Text>
                 <Text style={styles.activityName}>{info.displayName}</Text>
               </TouchableOpacity>
@@ -174,7 +174,7 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
           </View>
         )}
 
-        {/* 메모 (선택사항) */}
+        {/* 메모 */}
         {selectedType && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>메모 (선택사항)</Text>
@@ -183,6 +183,7 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
               value={note}
               onChangeText={setNote}
               placeholder="메모를 입력하세요..."
+              placeholderTextColor={COLORS.textTertiary}
               multiline
               numberOfLines={3}
             />
@@ -191,7 +192,10 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
 
         {/* 추가 버튼 */}
         {selectedType && (
-          <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAdd}
+            activeOpacity={0.7}>
             <Text style={styles.addButtonText}>활동 추가</Text>
           </TouchableOpacity>
         )}
@@ -203,15 +207,15 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: COLORS.background,
   },
   content: {
-    padding: 20,
+    padding: SPACING.screenPadding,
   },
   autoBanner: {
     flexDirection: 'row',
-    backgroundColor: '#E8F5E9',
-    borderRadius: 12,
+    backgroundColor: COLORS.accentLight,
+    borderRadius: RADIUS.small,
     padding: 14,
     marginBottom: 20,
     alignItems: 'center',
@@ -226,22 +230,20 @@ const styles = StyleSheet.create({
   autoBannerTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2E7D32',
+    color: COLORS.accent,
     marginBottom: 2,
   },
   autoBannerDesc: {
     fontSize: 12,
-    color: '#558B2F',
+    color: COLORS.textSecondary,
     lineHeight: 16,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 28,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
+    ...TYPOGRAPHY.heading,
+    marginBottom: 14,
   },
   grid: {
     flexDirection: 'row',
@@ -251,50 +253,46 @@ const styles = StyleSheet.create({
   activityCard: {
     width: '31%',
     aspectRatio: 1,
-    backgroundColor: 'white',
-    borderRadius: 15,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 10,
     borderWidth: 2,
     borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...SHADOWS.subtle,
   },
   recoveryCard: {
-    backgroundColor: '#F0F8FF',
+    backgroundColor: COLORS.metricBg.sleep,
   },
   activityCardSelected: {
-    borderColor: '#FF9800',
-    backgroundColor: '#FFF3E0',
+    borderColor: COLORS.fatigue.tired,
+    backgroundColor: '#FFF5EB',
   },
   activityCardSelectedRecovery: {
-    borderColor: '#4CAF50',
-    backgroundColor: '#E8F5E9',
+    borderColor: COLORS.fatigue.excellent,
+    backgroundColor: '#E8FFF9',
   },
   activityEmoji: {
     fontSize: 32,
     marginBottom: 5,
   },
   activityName: {
-    fontSize: 12,
-    fontWeight: '600',
+    ...TYPOGRAPHY.small,
+    color: COLORS.textPrimary,
     textAlign: 'center',
-    color: '#333',
   },
   timeSection: {
-    marginBottom: 30,
+    marginBottom: 28,
   },
   timeInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
-    borderRadius: 15,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
     padding: 20,
+    ...SHADOWS.card,
   },
   timeInput: {
     alignItems: 'center',
@@ -304,36 +302,37 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     width: 100,
     textAlign: 'center',
-    color: '#007AFF',
+    color: COLORS.accent,
   },
   timeLabel: {
-    fontSize: 16,
-    color: '#666',
+    ...TYPOGRAPHY.caption,
     marginTop: 5,
   },
   timeSeparator: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: COLORS.accent,
     marginHorizontal: 10,
   },
   noteInput: {
-    backgroundColor: 'white',
-    borderRadius: 15,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
     padding: 15,
     fontSize: 16,
     minHeight: 100,
     textAlignVertical: 'top',
+    color: COLORS.textPrimary,
+    ...SHADOWS.subtle,
   },
   addButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 15,
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.small,
     paddingVertical: 18,
     alignItems: 'center',
     marginTop: 10,
   },
   addButtonText: {
-    color: 'white',
+    color: COLORS.white,
     fontSize: 18,
     fontWeight: 'bold',
   },

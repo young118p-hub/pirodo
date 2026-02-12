@@ -16,8 +16,6 @@ import Slider from '@react-native-community/slider';
 import {useFatigue} from '../contexts/FatigueContext';
 import FatigueCircle from '../components/FatigueCircle';
 import {
-  FATIGUE_LEVEL_INFO,
-  getFatigueLevelFromPercentage,
   INPUT_MODE_INFO,
 } from '../utils/constants';
 import {InputMode, ActivityType} from '../types';
@@ -53,9 +51,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       </View>
     );
   }
-
-  const level = getFatigueLevelFromPercentage(fatiguePercentage);
-  const levelInfo = FATIGUE_LEVEL_INFO[level];
 
   const getSliderColor = (value: number) => {
     if (value <= 25) return COLORS.fatigue.excellent;

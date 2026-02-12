@@ -1,18 +1,36 @@
 /**
  * 로컬 푸시 알림 서비스
- * 피로도 경고, 앉아있기 알림, 수면 부족 알림
+ * 피로도 레벨별 알림 + 앉아있기 + 수면 부족
+ * 매번 다른 재미있는 메시지 랜덤 발송
  */
 
 import {Platform, PermissionsAndroid, Alert} from 'react-native';
+import {
+  getFatigueExcellentNotification,
+  getFatigueGoodNotification,
+  getFatigueTiredNotification,
+  getFatigueExhaustedNotification,
+  getSedentaryNotification,
+  getSleepNotification,
+} from '../utils/notificationTemplates';
 
 // 알림 쿨다운 (같은 타입 알림 재발송 최소 간격)
 const NOTIFICATION_COOLDOWN = 30 * 60 * 1000; // 30분
 
-type NotificationType = 'fatigue_high' | 'sedentary' | 'sleep_deficit';
+type NotificationType =
+  | 'fatigue_excellent'
+  | 'fatigue_good'
+  | 'fatigue_tired'
+  | 'fatigue_exhausted'
+  | 'sedentary'
+  | 'sleep_deficit';
 
 class NotificationServiceImpl {
   private lastNotificationTime: Record<NotificationType, number> = {
-    fatigue_high: 0,
+    fatigue_excellent: 0,
+    fatigue_good: 0,
+    fatigue_tired: 0,
+    fatigue_exhausted: 0,
     sedentary: 0,
     sleep_deficit: 0,
   };
@@ -57,41 +75,47 @@ class NotificationServiceImpl {
   }
 
   /**
-   * 피로도 기반 알림 체크
+   * 피로도 기반 알림 체크 (레벨별 랜덤 메시지)
+   * - 0~25%: 칭찬 & 응원
+   * - 26~50%: 가볍게 챙기기
+   * - 51~75%: 경고 & 유머
+   * - 76~100%: 강력 경고 & 블랙유머
    */
   checkFatigueAlert(percentage: number): void {
-    if (percentage >= 80) {
-      this.sendNotification(
-        'fatigue_high',
-        `피로도 ${Math.round(percentage)}%`,
-        '좀 쉬세요! 지금 당장 5분만 눈을 감아보세요.',
-      );
+    const pct = Math.round(percentage);
+
+    if (pct <= 25) {
+      const {title, body} = getFatigueExcellentNotification(pct);
+      this.sendNotification('fatigue_excellent', title, body);
+    } else if (pct <= 50) {
+      const {title, body} = getFatigueGoodNotification(pct);
+      this.sendNotification('fatigue_good', title, body);
+    } else if (pct <= 75) {
+      const {title, body} = getFatigueTiredNotification(pct);
+      this.sendNotification('fatigue_tired', title, body);
+    } else {
+      const {title, body} = getFatigueExhaustedNotification(pct);
+      this.sendNotification('fatigue_exhausted', title, body);
     }
   }
 
   /**
-   * 앉아있기 알림
+   * 앉아있기 알림 (랜덤 메시지)
    */
   checkSedentaryAlert(sedentaryMinutes: number): void {
     if (sedentaryMinutes >= 60) {
-      this.sendNotification(
-        'sedentary',
-        '오래 앉아있었어요!',
-        `${sedentaryMinutes}분째 앉아있어요. 일어나서 스트레칭 해볼까요?`,
-      );
+      const {title, body} = getSedentaryNotification(sedentaryMinutes);
+      this.sendNotification('sedentary', title, body);
     }
   }
 
   /**
-   * 수면 부족 알림
+   * 수면 부족 알림 (랜덤 메시지)
    */
   checkSleepAlert(sleepHours: number): void {
     if (sleepHours > 0 && sleepHours < 6) {
-      this.sendNotification(
-        'sleep_deficit',
-        '수면 부족 주의',
-        `어젯밤 ${sleepHours}시간 수면. 오늘은 일찍 쉬세요!`,
-      );
+      const {title, body} = getSleepNotification(sleepHours);
+      this.sendNotification('sleep_deficit', title, body);
     }
   }
 
@@ -100,7 +124,10 @@ class NotificationServiceImpl {
    */
   resetCooldowns(): void {
     this.lastNotificationTime = {
-      fatigue_high: 0,
+      fatigue_excellent: 0,
+      fatigue_good: 0,
+      fatigue_tired: 0,
+      fatigue_exhausted: 0,
       sedentary: 0,
       sleep_deficit: 0,
     };

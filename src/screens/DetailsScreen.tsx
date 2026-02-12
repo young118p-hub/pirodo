@@ -1,5 +1,6 @@
 /**
  * 상세 분석 화면
+ * V4 트렌디 UI
  */
 
 import React from 'react';
@@ -12,8 +13,9 @@ import {
   Alert,
 } from 'react-native';
 import {useFatigue} from '../contexts/FatigueContext';
-import {ACTIVITY_TYPE_INFO, INPUT_MODE_INFO} from '../utils/constants';
-import {ActivityType, DataSource, InputMode} from '../types';
+import {ACTIVITY_TYPE_INFO} from '../utils/constants';
+import {ActivityType, DataSource} from '../types';
+import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 interface DetailsScreenProps {
   navigation: any;
@@ -31,7 +33,7 @@ const DATA_SOURCE_LABELS: Record<string, string> = {
 };
 
 const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
-  const {dailyData, removeActivity, clearAllActivities, inputMode} = useFatigue();
+  const {dailyData, removeActivity, clearAllActivities} = useFatigue();
 
   const handleDeleteActivity = (activityId: string, activityName: string) => {
     Alert.alert(
@@ -63,7 +65,6 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
     );
   };
 
-  // 활동 타입별 그룹화 및 합계
   const activitySummary = Object.values(ActivityType).map(type => {
     const activities = dailyData.activities.filter(a => a.type === type);
     const totalMinutes = activities.reduce((sum, a) => sum + a.durationMinutes, 0);
@@ -78,7 +79,6 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
     };
   }).filter(item => item.count > 0);
 
-  // 피로/회복 활동 분리
   const fatigueActivities = activitySummary.filter(item => !item.info.isRecovery);
   const recoveryActivities = activitySummary.filter(item => item.info.isRecovery);
 
@@ -99,7 +99,7 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
         {/* 통계 헤더 */}
         <View style={styles.statsContainer}>
@@ -141,7 +141,6 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
                   </View>
                 </View>
 
-                {/* 개별 활동 목록 */}
                 {item.activities.map(activity => (
                   <View key={activity.id} style={styles.activityItem}>
                     <View style={styles.activityItemInfo}>
@@ -171,7 +170,8 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
                       style={styles.deleteButton}
                       onPress={() =>
                         handleDeleteActivity(activity.id, item.info.displayName)
-                      }>
+                      }
+                      activeOpacity={0.7}>
                       <Text style={styles.deleteButtonText}>삭제</Text>
                     </TouchableOpacity>
                   </View>
@@ -201,7 +201,6 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
                   </View>
                 </View>
 
-                {/* 개별 활동 목록 */}
                 {item.activities.map(activity => (
                   <View key={activity.id} style={styles.activityItem}>
                     <View style={styles.activityItemInfo}>
@@ -231,7 +230,8 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
                       style={styles.deleteButton}
                       onPress={() =>
                         handleDeleteActivity(activity.id, item.info.displayName)
-                      }>
+                      }
+                      activeOpacity={0.7}>
                       <Text style={styles.deleteButtonText}>삭제</Text>
                     </TouchableOpacity>
                   </View>
@@ -248,7 +248,8 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
             <Text style={styles.emptyText}>아직 기록된 활동이 없습니다</Text>
             <TouchableOpacity
               style={styles.addButton}
-              onPress={() => navigation.navigate('AddActivity')}>
+              onPress={() => navigation.navigate('AddActivity')}
+              activeOpacity={0.7}>
               <Text style={styles.addButtonText}>활동 추가하기</Text>
             </TouchableOpacity>
           </View>
@@ -258,7 +259,8 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
         {dailyData.activities.length > 0 && (
           <TouchableOpacity
             style={styles.clearAllButton}
-            onPress={handleClearAll}>
+            onPress={handleClearAll}
+            activeOpacity={0.7}>
             <Text style={styles.clearAllButtonText}>전체 삭제</Text>
           </TouchableOpacity>
         )}
@@ -270,61 +272,50 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: COLORS.background,
   },
   content: {
-    padding: 20,
+    padding: SPACING.screenPadding,
     paddingBottom: 40,
   },
   statsContainer: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 30,
+    marginBottom: 28,
   },
   statCard: {
     flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 15,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
     padding: 15,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...SHADOWS.card,
   },
   statNumber: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: COLORS.accent,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 5,
+    ...TYPOGRAPHY.small,
+    marginTop: 4,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 28,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
+    ...TYPOGRAPHY.heading,
+    marginBottom: 14,
   },
   activityTypeCard: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.card,
+    padding: 16,
+    marginBottom: 12,
+    ...SHADOWS.card,
   },
   recoveryCard: {
-    backgroundColor: '#F0F8FF',
+    backgroundColor: COLORS.metricBg.sleep,
   },
   activityTypeHeader: {
     marginBottom: 10,
@@ -334,17 +325,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activityTypeEmoji: {
-    fontSize: 32,
-    marginRight: 15,
+    fontSize: 28,
+    marginRight: 14,
   },
   activityTypeName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    ...TYPOGRAPHY.heading,
   },
   activityTypeSummary: {
-    fontSize: 14,
-    color: '#666',
+    ...TYPOGRAPHY.caption,
     marginTop: 2,
   },
   activityItem: {
@@ -353,7 +341,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: COLORS.divider,
   },
   activityItemInfo: {
     flex: 1,
@@ -364,11 +352,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   activityTime: {
-    fontSize: 14,
-    color: '#666',
+    ...TYPOGRAPHY.caption,
   },
   autoBadge: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: COLORS.accentLight,
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -376,33 +363,33 @@ const styles = StyleSheet.create({
   autoBadgeText: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: COLORS.accent,
   },
   sourceLabel: {
     fontSize: 10,
-    color: '#999',
+    color: COLORS.textTertiary,
   },
   activityDuration: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: COLORS.textPrimary,
     marginTop: 2,
   },
   activityNote: {
-    fontSize: 14,
-    color: '#999',
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textTertiary,
     marginTop: 4,
     fontStyle: 'italic',
   },
   deleteButton: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: '#FFE0E0',
+    backgroundColor: '#FFF0F0',
     borderRadius: 8,
   },
   deleteButtonText: {
-    color: '#F44336',
-    fontSize: 14,
+    color: COLORS.fatigue.exhausted,
+    fontSize: 13,
     fontWeight: '600',
   },
   emptyContainer: {
@@ -410,34 +397,34 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyEmoji: {
-    fontSize: 64,
-    marginBottom: 20,
+    fontSize: 56,
+    marginBottom: 16,
   },
   emptyText: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 30,
+    ...TYPOGRAPHY.heading,
+    color: COLORS.textSecondary,
+    marginBottom: 24,
   },
   addButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: COLORS.accent,
     paddingHorizontal: 30,
     paddingVertical: 15,
-    borderRadius: 12,
+    borderRadius: RADIUS.small,
   },
   addButtonText: {
-    color: 'white',
+    color: COLORS.white,
     fontSize: 16,
     fontWeight: 'bold',
   },
   clearAllButton: {
-    backgroundColor: '#FFE0E0',
+    backgroundColor: '#FFF0F0',
     paddingVertical: 15,
-    borderRadius: 12,
+    borderRadius: RADIUS.small,
     alignItems: 'center',
     marginTop: 10,
   },
   clearAllButtonText: {
-    color: '#F44336',
+    color: COLORS.fatigue.exhausted,
     fontSize: 16,
     fontWeight: '600',
   },
