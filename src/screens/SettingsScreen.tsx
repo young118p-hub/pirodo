@@ -30,7 +30,7 @@ const THEME_OPTIONS = [
 
 const SettingsScreen: React.FC = () => {
   const {settings, updateSettings, setInputMode} = useSettings();
-  const {themeMode, setThemeMode, colors} = useTheme();
+  const {themeMode, setThemeMode, colors, shadows} = useTheme();
   const [dataSummary, setDataSummary] = useState({totalKeys: 0, historyDays: 0, settingsExist: false});
   const [importModalVisible, setImportModalVisible] = useState(false);
   const [importText, setImportText] = useState('');
@@ -85,31 +85,31 @@ const SettingsScreen: React.FC = () => {
     return (
       <TouchableOpacity
         key={mode}
-        style={[styles.modeCard, isSelected && styles.modeCardSelected]}
+        style={[styles.modeCard, {backgroundColor: colors.surface}, shadows.card, isSelected && [styles.modeCardSelected, {backgroundColor: colors.accentLight}]]}
         onPress={() => setInputMode(mode)}
         activeOpacity={0.7}>
         {/* 좌측 컬러 바 */}
-        {isSelected && <View style={styles.modeColorBar} />}
+        {isSelected && <View style={[styles.modeColorBar, {backgroundColor: colors.accent}]} />}
 
         <View style={styles.modeBody}>
           <View style={styles.modeHeader}>
             <Text style={styles.modeEmoji}>{info.emoji}</Text>
             <View style={styles.modeHeaderText}>
-              <Text style={[styles.modeName, isSelected && styles.modeNameSelected]}>
+              <Text style={[styles.modeName, {color: colors.textPrimary}, isSelected && {color: colors.accent}]}>
                 {info.displayName}
               </Text>
               {isSelected && (
-                <View style={styles.activeBadge}>
+                <View style={[styles.activeBadge, {backgroundColor: colors.accent}]}>
                   <Text style={styles.activeBadgeText}>사용 중</Text>
                 </View>
               )}
             </View>
           </View>
-          <Text style={styles.modeDescription}>{info.description}</Text>
+          <Text style={[styles.modeDescription, {color: colors.textSecondary}]}>{info.description}</Text>
           <View style={styles.dataSourcesContainer}>
             {info.dataSources.map((source, index) => (
-              <View key={index} style={styles.dataSourceBadge}>
-                <Text style={styles.dataSourceText}>{source}</Text>
+              <View key={index} style={[styles.dataSourceBadge, {backgroundColor: colors.background}]}>
+                <Text style={[styles.dataSourceText, {color: colors.accent}]}>{source}</Text>
               </View>
             ))}
           </View>
@@ -120,32 +120,35 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, {backgroundColor: colors.background}]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
-      <Text style={styles.sectionTitle}>측정 방식</Text>
-      <Text style={styles.sectionSubtitle}>
+      <Text style={[styles.sectionTitle, {color: colors.textPrimary}]}>측정 방식</Text>
+      <Text style={[styles.sectionSubtitle, {color: colors.textSecondary}]}>
         피로도를 어떻게 측정할지 선택하세요
       </Text>
 
       {[InputMode.WATCH, InputMode.PHONE, InputMode.MANUAL].map(renderModeCard)}
 
       {/* 테마 설정 */}
-      <Text style={[styles.sectionTitle, {marginTop: 32}]}>화면 테마</Text>
+      <Text style={[styles.sectionTitle, {marginTop: 32, color: colors.textPrimary}]}>화면 테마</Text>
       <View style={styles.themeRow}>
         {THEME_OPTIONS.map(opt => (
           <TouchableOpacity
             key={opt.value}
             style={[
               styles.themeOption,
-              themeMode === opt.value && styles.themeOptionSelected,
+              {backgroundColor: colors.surface},
+              shadows.subtle,
+              themeMode === opt.value && [styles.themeOptionSelected, {borderColor: colors.accent, backgroundColor: colors.accentLight}],
             ]}
             onPress={() => setThemeMode(opt.value)}
             activeOpacity={0.7}>
             <Text style={styles.themeEmoji}>{opt.emoji}</Text>
             <Text style={[
               styles.themeLabel,
-              themeMode === opt.value && styles.themeLabelSelected,
+              {color: colors.textSecondary},
+              themeMode === opt.value && {color: colors.accent},
             ]}>
               {opt.label}
             </Text>
@@ -155,13 +158,13 @@ const SettingsScreen: React.FC = () => {
 
       {settings.inputMode !== InputMode.MANUAL && (
         <>
-          <Text style={[styles.sectionTitle, {marginTop: 32}]}>자동 감지 설정</Text>
+          <Text style={[styles.sectionTitle, {marginTop: 32, color: colors.textPrimary}]}>자동 감지 설정</Text>
 
-          <View style={styles.settingCard}>
+          <View style={[styles.settingCard, {backgroundColor: colors.surface}, shadows.card]}>
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>앉아있기 감지</Text>
-                <Text style={styles.settingDescription}>
+                <Text style={[styles.settingLabel, {color: colors.textPrimary}]}>앉아있기 감지</Text>
+                <Text style={[styles.settingDescription, {color: colors.textSecondary}]}>
                   {settings.sedentaryThresholdMinutes}분 이상 움직임 없으면 자동 기록
                 </Text>
               </View>
@@ -170,17 +173,17 @@ const SettingsScreen: React.FC = () => {
                 onValueChange={(value) =>
                   updateSettings({enableSedentaryDetection: value})
                 }
-                trackColor={{false: COLORS.gaugeBackground, true: COLORS.accentLight}}
-                thumbColor={settings.enableSedentaryDetection ? COLORS.accent : COLORS.textTertiary}
+                trackColor={{false: colors.gaugeBackground, true: colors.accentLight}}
+                thumbColor={settings.enableSedentaryDetection ? colors.accent : colors.textTertiary}
               />
             </View>
 
-            <View style={styles.settingDivider} />
+            <View style={[styles.settingDivider, {backgroundColor: colors.divider}]} />
 
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>알림</Text>
-                <Text style={styles.settingDescription}>
+                <Text style={[styles.settingLabel, {color: colors.textPrimary}]}>알림</Text>
+                <Text style={[styles.settingDescription, {color: colors.textSecondary}]}>
                   피로도 높을 때 휴식 알림
                 </Text>
               </View>
@@ -189,17 +192,17 @@ const SettingsScreen: React.FC = () => {
                 onValueChange={(value) =>
                   updateSettings({enableNotifications: value})
                 }
-                trackColor={{false: COLORS.gaugeBackground, true: COLORS.accentLight}}
-                thumbColor={settings.enableNotifications ? COLORS.accent : COLORS.textTertiary}
+                trackColor={{false: colors.gaugeBackground, true: colors.accentLight}}
+                thumbColor={settings.enableNotifications ? colors.accent : colors.textTertiary}
               />
             </View>
 
-            <View style={styles.settingDivider} />
+            <View style={[styles.settingDivider, {backgroundColor: colors.divider}]} />
 
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>감지 시간대</Text>
-                <Text style={styles.settingDescription}>
+                <Text style={[styles.settingLabel, {color: colors.textPrimary}]}>감지 시간대</Text>
+                <Text style={[styles.settingDescription, {color: colors.textSecondary}]}>
                   {settings.daytimeStartHour}시 ~ {settings.daytimeEndHour}시 사이에만 감지
                 </Text>
               </View>
@@ -209,34 +212,34 @@ const SettingsScreen: React.FC = () => {
       )}
 
       {/* 데이터 관리 섹션 */}
-      <Text style={[styles.sectionTitle, {marginTop: 32}]}>데이터 관리</Text>
-      <Text style={styles.sectionSubtitle}>
+      <Text style={[styles.sectionTitle, {marginTop: 32, color: colors.textPrimary}]}>데이터 관리</Text>
+      <Text style={[styles.sectionSubtitle, {color: colors.textSecondary}]}>
         {dataSummary.historyDays}일치 기록 보관 중
       </Text>
 
-      <View style={styles.settingCard}>
+      <View style={[styles.settingCard, {backgroundColor: colors.surface}, shadows.card]}>
         <TouchableOpacity style={styles.settingRow} onPress={handleExport} activeOpacity={0.6}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>📤 백업 내보내기</Text>
-            <Text style={styles.settingDescription}>JSON 파일로 데이터 공유</Text>
+            <Text style={[styles.settingLabel, {color: colors.textPrimary}]}>📤 백업 내보내기</Text>
+            <Text style={[styles.settingDescription, {color: colors.textSecondary}]}>JSON 파일로 데이터 공유</Text>
           </View>
         </TouchableOpacity>
 
-        <View style={styles.settingDivider} />
+        <View style={[styles.settingDivider, {backgroundColor: colors.divider}]} />
 
         <TouchableOpacity style={styles.settingRow} onPress={() => setImportModalVisible(true)} activeOpacity={0.6}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>📥 백업 복원</Text>
-            <Text style={styles.settingDescription}>JSON 데이터로 복원</Text>
+            <Text style={[styles.settingLabel, {color: colors.textPrimary}]}>📥 백업 복원</Text>
+            <Text style={[styles.settingDescription, {color: colors.textSecondary}]}>JSON 데이터로 복원</Text>
           </View>
         </TouchableOpacity>
 
-        <View style={styles.settingDivider} />
+        <View style={[styles.settingDivider, {backgroundColor: colors.divider}]} />
 
         <TouchableOpacity style={styles.settingRow} onPress={handleReset} activeOpacity={0.6}>
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, {color: COLORS.fatigue.exhausted}]}>🗑️ 데이터 초기화</Text>
-            <Text style={styles.settingDescription}>모든 기록 삭제</Text>
+            <Text style={[styles.settingLabel, {color: colors.fatigue.exhausted}]}>🗑️ 데이터 초기화</Text>
+            <Text style={[styles.settingDescription, {color: colors.textSecondary}]}>모든 기록 삭제</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -244,27 +247,27 @@ const SettingsScreen: React.FC = () => {
       {/* 복원 모달 */}
       <Modal visible={importModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>백업 복원</Text>
-            <Text style={styles.modalSubtitle}>백업 JSON 데이터를 붙여넣으세요</Text>
+          <View style={[styles.modalContent, {backgroundColor: colors.surface}]}>
+            <Text style={[styles.modalTitle, {color: colors.textPrimary}]}>백업 복원</Text>
+            <Text style={[styles.modalSubtitle, {color: colors.textSecondary}]}>백업 JSON 데이터를 붙여넣으세요</Text>
             <TextInput
-              style={styles.importInput}
+              style={[styles.importInput, {backgroundColor: colors.background, color: colors.textPrimary}]}
               multiline
               placeholder='{"version":1,"appName":"pirodo",...}'
-              placeholderTextColor={COLORS.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={importText}
               onChangeText={setImportText}
               textAlignVertical="top"
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={styles.modalCancelButton}
+                style={[styles.modalCancelButton, {backgroundColor: colors.background}]}
                 onPress={() => {setImportModalVisible(false); setImportText('');}}
                 activeOpacity={0.7}>
-                <Text style={styles.modalCancelText}>취소</Text>
+                <Text style={[styles.modalCancelText, {color: colors.textSecondary}]}>취소</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.modalConfirmButton}
+                style={[styles.modalConfirmButton, {backgroundColor: colors.accent}]}
                 onPress={handleImport}
                 activeOpacity={0.7}>
                 <Text style={styles.modalConfirmText}>복원</Text>

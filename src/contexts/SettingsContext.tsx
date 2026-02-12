@@ -30,6 +30,10 @@ export const SettingsProvider: React.FC<{children: React.ReactNode}> = ({childre
         const stored = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored) as Partial<AppSettings>;
+          // 기존 사용자: onboardingComplete 필드가 없으면 자동 완료 처리
+          if (parsed.onboardingComplete === undefined) {
+            parsed.onboardingComplete = true;
+          }
           setSettings({...DEFAULT_SETTINGS, ...parsed});
         }
       } catch (e) {

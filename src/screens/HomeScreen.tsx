@@ -21,6 +21,7 @@ import {
 import {InputMode, ActivityType} from '../types';
 import {getRecoveryTips} from '../utils/recoveryEngine';
 import RecoveryCard from '../components/RecoveryCard';
+import {useTheme} from '../contexts/ThemeContext';
 import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 interface HomeScreenProps {
@@ -28,6 +29,7 @@ interface HomeScreenProps {
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
+  const {colors, shadows} = useTheme();
   const {
     fatiguePercentage,
     fatigueMessage,
@@ -87,20 +89,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, {backgroundColor: colors.background}]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Text style={styles.title}>피로도</Text>
-        <View style={styles.datePill}>
-          <Text style={styles.dateText}>{dateString}</Text>
+        <Text style={[styles.title, {color: colors.textPrimary}]}>피로도</Text>
+        <View style={[styles.datePill, {backgroundColor: colors.accentLight}]}>
+          <Text style={[styles.dateText, {color: colors.accent}]}>{dateString}</Text>
         </View>
       </View>
 
       {/* 슬라이더 (Manual 모드) */}
       {inputMode === InputMode.MANUAL && (
-        <View style={styles.sliderCard}>
+        <View style={[styles.sliderCard, {backgroundColor: colors.surface}, shadows.card]}>
           <Text style={styles.sliderLabel}>지금 컨디션 어때?</Text>
           <Slider
             style={styles.slider}
@@ -128,9 +130,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       )}
 
       {/* 메인 게이지 카드 */}
-      <View style={styles.gaugeCard}>
+      <View style={[styles.gaugeCard, {backgroundColor: colors.surface}, shadows.card]}>
         <FatigueCircle percentage={fatiguePercentage} size={240} />
-        <Text style={styles.fatigueMessage}>{fatigueMessage}</Text>
+        <Text style={[styles.fatigueMessage, {color: colors.textSecondary}]}>{fatigueMessage}</Text>
         <View style={styles.sourceBadge}>
           <Text style={styles.sourceBadgeText}>
             {INPUT_MODE_INFO[inputMode].emoji} {dataSourceLabel}
@@ -202,7 +204,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
               style={styles.quickButton}
               onPress={() => handleQuickAdd(item.type)}
               activeOpacity={0.6}>
-              <View style={styles.quickIconCircle}>
+              <View style={[styles.quickIconCircle, {backgroundColor: colors.surface}, shadows.subtle]}>
                 <Text style={styles.quickIcon}>{item.icon}</Text>
               </View>
               <Text style={styles.quickLabel}>{item.label}</Text>
@@ -214,13 +216,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       {/* 하단 액션 버튼 */}
       <View style={styles.actionButtons}>
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton, {backgroundColor: colors.accent}]}
           onPress={() => navigation.navigate('AddActivity')}
           activeOpacity={0.7}>
           <Text style={styles.addButtonText}>+ 활동 추가</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.detailButton}
+          style={[styles.detailButton, {backgroundColor: colors.surface, borderColor: colors.accent}]}
           onPress={() => navigation.navigate('Details')}
           activeOpacity={0.7}>
           <Text style={styles.detailButtonText}>상세 보기</Text>

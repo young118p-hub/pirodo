@@ -2,7 +2,7 @@
  * 앱 상수 정의
  */
 
-import {ActivityType, ActivityTypeInfo, FatigueLevel, FatigueLevelInfo, InputMode} from '../types';
+import {ActivityType, ActivityTypeInfo, AppSettings, FatigueLevel, FatigueLevelInfo, InputMode} from '../types';
 
 /**
  * 활동 타입별 정보
@@ -193,7 +193,7 @@ export const INPUT_MODE_INFO: Record<InputMode, {
 /**
  * 기본 설정값
  */
-export const DEFAULT_SETTINGS: import('../types').AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   inputMode: InputMode.MANUAL,
   enableSedentaryDetection: true,
   sedentaryThresholdMinutes: 30,

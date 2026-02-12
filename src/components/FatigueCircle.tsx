@@ -8,6 +8,7 @@ import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import Svg, {Line, Circle as SvgCircle} from 'react-native-svg';
 import {FATIGUE_LEVEL_INFO, getFatigueLevelFromPercentage} from '../utils/constants';
+import {useTheme} from '../contexts/ThemeContext';
 import {COLORS} from '../utils/theme';
 
 interface FatigueCircleProps {
@@ -21,6 +22,7 @@ const FatigueCircle: React.FC<FatigueCircleProps> = ({
   percentage,
   size = 240,
 }) => {
+  const {colors} = useTheme();
   const level = getFatigueLevelFromPercentage(percentage);
   const info = FATIGUE_LEVEL_INFO[level];
 
@@ -62,7 +64,7 @@ const FatigueCircle: React.FC<FatigueCircleProps> = ({
           cx={center}
           cy={center}
           r={innerRadius - 8}
-          fill={COLORS.surface}
+          fill={colors.surface}
           opacity={0.6}
         />
 
@@ -74,7 +76,7 @@ const FatigueCircle: React.FC<FatigueCircleProps> = ({
             y1={tick.y1}
             x2={tick.x2}
             y2={tick.y2}
-            stroke={tick.isFilled ? info.color : COLORS.gaugeTick}
+            stroke={tick.isFilled ? info.color : colors.gaugeTick}
             strokeWidth={tick.tickWidth}
             strokeLinecap="round"
             opacity={tick.isFilled ? 1 : 0.4}
@@ -84,7 +86,7 @@ const FatigueCircle: React.FC<FatigueCircleProps> = ({
 
       {/* 중앙 정보 */}
       <View style={styles.centerContent}>
-        <Text style={styles.label}>피로도</Text>
+        <Text style={[styles.label, {color: colors.textTertiary}]}>피로도</Text>
         <Text style={[styles.percentage, {color: info.color}]}>
           {Math.round(percentage)}
           <Text style={[styles.percentSign, {color: info.color}]}>%</Text>

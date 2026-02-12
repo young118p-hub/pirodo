@@ -11,6 +11,7 @@ import {DailyHistoryRecord} from '../types';
 import {HistoryService} from '../services/HistoryService';
 import {PatternAnalyzer, WeeklyAnalysis} from '../services/PatternAnalyzer';
 import {getFatigueLevelFromPercentage, FATIGUE_LEVEL_INFO} from '../utils/constants';
+import {useTheme} from '../contexts/ThemeContext';
 import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 type Period = 'weekly' | 'monthly';
@@ -18,6 +19,7 @@ type Period = 'weekly' | 'monthly';
 const screenWidth = Dimensions.get('window').width;
 
 const StatsScreen: React.FC = () => {
+  const {colors, shadows} = useTheme();
   const {fatiguePercentage, dailyData} = useFatigue();
   const [period, setPeriod] = useState<Period>('weekly');
   const [weeklyData, setWeeklyData] = useState<(DailyHistoryRecord | null)[]>([]);
@@ -101,7 +103,7 @@ const StatsScreen: React.FC = () => {
             y1={maxBarHeight * (1 - ratio)}
             x2={chartWidth}
             y2={maxBarHeight * (1 - ratio)}
-            stroke={COLORS.divider}
+            stroke={colors.divider}
             strokeWidth={1}
           />
         ))}
@@ -121,7 +123,7 @@ const StatsScreen: React.FC = () => {
                 width={barWidth}
                 height={hasData ? Math.max(barHeight, 4) : 4}
                 rx={6}
-                fill={hasData ? getBarColor(percentage) : COLORS.gaugeBackground}
+                fill={hasData ? getBarColor(percentage) : colors.gaugeBackground}
                 opacity={hasData ? 1 : 0.3}
               />
               {hasData && (
@@ -140,7 +142,7 @@ const StatsScreen: React.FC = () => {
                 y={maxBarHeight + 15}
                 fontSize={11}
                 fontWeight={isToday ? 'bold' : 'normal'}
-                fill={isToday ? COLORS.accent : COLORS.textSecondary}
+                fill={isToday ? colors.accent : colors.textSecondary}
                 textAnchor="middle">
                 {getDayLabel(index, 7)}
               </SvgText>
@@ -148,7 +150,7 @@ const StatsScreen: React.FC = () => {
                 x={x + barWidth / 2}
                 y={maxBarHeight + 28}
                 fontSize={9}
-                fill={COLORS.textTertiary}
+                fill={colors.textTertiary}
                 textAnchor="middle">
                 {getDateLabel(index, 7)}
               </SvgText>
@@ -200,14 +202,14 @@ const StatsScreen: React.FC = () => {
             y1={graphHeight * (1 - ratio)}
             x2={chartWidth - padding}
             y2={graphHeight * (1 - ratio)}
-            stroke={COLORS.divider}
+            stroke={colors.divider}
             strokeWidth={1}
           />
         ))}
 
         {/* 라인 */}
         {pathD && (
-          <Path d={pathD} stroke={COLORS.accent} strokeWidth={2.5} fill="none" />
+          <Path d={pathD} stroke={colors.accent} strokeWidth={2.5} fill="none" />
         )}
 
         {/* 데이터 포인트 */}
@@ -228,7 +230,7 @@ const StatsScreen: React.FC = () => {
             x={padding + (i / 29) * graphWidth}
             y={chartHeight - 2}
             fontSize={9}
-            fill={COLORS.textTertiary}
+            fill={colors.textTertiary}
             textAnchor="middle">
             {getDateLabel(i, 30)}
           </SvgText>
@@ -252,7 +254,7 @@ const StatsScreen: React.FC = () => {
           y1={chartHeight / 2}
           x2={chartWidth}
           y2={chartHeight / 2}
-          stroke={COLORS.divider}
+          stroke={colors.divider}
           strokeWidth={1}
         />
 
@@ -271,7 +273,7 @@ const StatsScreen: React.FC = () => {
               width={barWidth - 2}
               height={barH}
               rx={2}
-              fill={isFatigue ? COLORS.fatigue.tired : COLORS.fatigue.excellent}
+              fill={isFatigue ? colors.fatigue.tired : colors.fatigue.excellent}
               opacity={0.7}
             />
           );
@@ -284,7 +286,7 @@ const StatsScreen: React.FC = () => {
             x={24 + h * barWidth + barWidth / 2}
             y={chartHeight - 2}
             fontSize={8}
-            fill={COLORS.textTertiary}
+            fill={colors.textTertiary}
             textAnchor="middle">
             {h}시
           </SvgText>
@@ -295,24 +297,25 @@ const StatsScreen: React.FC = () => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, {backgroundColor: colors.background}]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
       {/* 헤더 */}
-      <Text style={styles.title}>통계</Text>
-      <Text style={styles.subtitle}>나의 피로도 트렌드</Text>
+      <Text style={[styles.title, {color: colors.textPrimary}]}>통계</Text>
+      <Text style={[styles.subtitle, {color: colors.textSecondary}]}>나의 피로도 트렌드</Text>
 
       {/* 기간 전환 탭 */}
-      <View style={styles.periodTabs}>
+      <View style={[styles.periodTabs, {backgroundColor: colors.surface}, shadows.subtle]}>
         {(['weekly', 'monthly'] as Period[]).map(p => (
           <TouchableOpacity
             key={p}
-            style={[styles.periodTab, period === p && styles.periodTabActive]}
+            style={[styles.periodTab, period === p && [styles.periodTabActive, {backgroundColor: colors.accent}]]}
             onPress={() => setPeriod(p)}
             activeOpacity={0.7}>
             <Text
               style={[
                 styles.periodTabText,
+                {color: colors.textSecondary},
                 period === p && styles.periodTabTextActive,
               ]}>
               {p === 'weekly' ? '주간' : '월간'}
@@ -322,24 +325,24 @@ const StatsScreen: React.FC = () => {
       </View>
 
       {/* 차트 */}
-      <View style={styles.chartCard}>
-        <Text style={styles.chartLabel}>
+      <View style={[styles.chartCard, {backgroundColor: colors.surface}, shadows.card]}>
+        <Text style={[styles.chartLabel, {color: colors.textSecondary}]}>
           {period === 'weekly' ? '최근 7일' : '최근 30일'} 피로도
         </Text>
         {period === 'weekly' ? renderWeeklyChart() : renderMonthlyChart()}
       </View>
 
       {/* 시간대별 패턴 */}
-      <View style={styles.chartCard}>
-        <Text style={styles.chartLabel}>오늘 시간대별 패턴</Text>
+      <View style={[styles.chartCard, {backgroundColor: colors.surface}, shadows.card]}>
+        <Text style={[styles.chartLabel, {color: colors.textSecondary}]}>오늘 시간대별 패턴</Text>
         <View style={styles.patternLegend}>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, {backgroundColor: COLORS.fatigue.tired}]} />
-            <Text style={styles.legendText}>피로 증가</Text>
+            <View style={[styles.legendDot, {backgroundColor: colors.fatigue.tired}]} />
+            <Text style={[styles.legendText, {color: colors.textTertiary}]}>피로 증가</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, {backgroundColor: COLORS.fatigue.excellent}]} />
-            <Text style={styles.legendText}>회복</Text>
+            <View style={[styles.legendDot, {backgroundColor: colors.fatigue.excellent}]} />
+            <Text style={[styles.legendText, {color: colors.textTertiary}]}>회복</Text>
           </View>
         </View>
         {renderHourlyChart()}
@@ -348,29 +351,29 @@ const StatsScreen: React.FC = () => {
       {/* 주간 요약 */}
       {stats && stats.dataCount > 0 ? (
         <>
-          <View style={styles.summaryCard}>
+          <View style={[styles.summaryCard, {backgroundColor: colors.surface}, shadows.card]}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{stats.avgFatigue}%</Text>
-              <Text style={styles.summaryLabel}>평균</Text>
+              <Text style={[styles.summaryValue, {color: colors.textPrimary}]}>{stats.avgFatigue}%</Text>
+              <Text style={[styles.summaryLabel, {color: colors.textTertiary}]}>평균</Text>
             </View>
-            <View style={styles.summaryDivider} />
+            <View style={[styles.summaryDivider, {backgroundColor: colors.divider}]} />
             <View style={styles.summaryItem}>
-              <Text style={[styles.summaryValue, {color: COLORS.fatigue.exhausted}]}>
+              <Text style={[styles.summaryValue, {color: colors.fatigue.exhausted}]}>
                 {stats.maxFatigue}%
               </Text>
-              <Text style={styles.summaryLabel}>최고</Text>
+              <Text style={[styles.summaryLabel, {color: colors.textTertiary}]}>최고</Text>
             </View>
-            <View style={styles.summaryDivider} />
+            <View style={[styles.summaryDivider, {backgroundColor: colors.divider}]} />
             <View style={styles.summaryItem}>
-              <Text style={[styles.summaryValue, {color: COLORS.fatigue.excellent}]}>
+              <Text style={[styles.summaryValue, {color: colors.fatigue.excellent}]}>
                 {stats.minFatigue}%
               </Text>
-              <Text style={styles.summaryLabel}>최저</Text>
+              <Text style={[styles.summaryLabel, {color: colors.textTertiary}]}>최저</Text>
             </View>
           </View>
 
-          <View style={styles.insightCard}>
-            <Text style={styles.insightTitle}>주간 인사이트</Text>
+          <View style={[styles.insightCard, {backgroundColor: colors.surface}, shadows.card]}>
+            <Text style={[styles.insightTitle, {color: colors.textPrimary}]}>주간 인사이트</Text>
             {[
               {icon: '🌙', text: `평균 수면 ${stats.avgSleep}시간`},
               {icon: '👟', text: `평균 걸음수 ${stats.avgSteps.toLocaleString()}보`},
@@ -378,39 +381,41 @@ const StatsScreen: React.FC = () => {
             ].map((item, idx) => (
               <View key={idx} style={styles.insightRow}>
                 <Text style={styles.insightIcon}>{item.icon}</Text>
-                <Text style={styles.insightText}>{item.text}</Text>
+                <Text style={[styles.insightText, {color: colors.textSecondary}]}>{item.text}</Text>
               </View>
             ))}
           </View>
 
           {/* AI 패턴 분석 */}
           {aiAnalysis && aiAnalysis.insights.length > 0 && (
-            <View style={styles.aiCard}>
+            <View style={[styles.aiCard, {backgroundColor: colors.surface}, shadows.card]}>
               <View style={styles.aiHeader}>
-                <Text style={styles.aiTitle}>🧠 AI 패턴 분석</Text>
+                <Text style={[styles.aiTitle, {color: colors.textPrimary}]}>🧠 AI 패턴 분석</Text>
                 <View style={[
                   styles.trendBadge,
+                  {backgroundColor: colors.accentLight},
                   aiAnalysis.trend === 'improving' && styles.trendBadgeGood,
                   aiAnalysis.trend === 'worsening' && styles.trendBadgeBad,
                 ]}>
-                  <Text style={styles.trendBadgeText}>
+                  <Text style={[styles.trendBadgeText, {color: colors.textPrimary}]}>
                     {aiAnalysis.trend === 'improving' ? '📈 개선' :
                      aiAnalysis.trend === 'worsening' ? '📉 주의' : '➡️ 안정'}
                   </Text>
                 </View>
               </View>
-              <Text style={styles.trendDesc}>{aiAnalysis.trendDescription}</Text>
+              <Text style={[styles.trendDesc, {color: colors.textSecondary}]}>{aiAnalysis.trendDescription}</Text>
 
               {aiAnalysis.insights.map((insight, idx) => (
                 <View key={idx} style={[
                   styles.aiInsightItem,
+                  {backgroundColor: colors.background},
                   insight.type === 'warning' && styles.aiInsightWarning,
                   insight.type === 'positive' && styles.aiInsightPositive,
                 ]}>
                   <Text style={styles.aiInsightEmoji}>{insight.emoji}</Text>
                   <View style={styles.aiInsightContent}>
-                    <Text style={styles.aiInsightTitle}>{insight.title}</Text>
-                    <Text style={styles.aiInsightDesc}>{insight.description}</Text>
+                    <Text style={[styles.aiInsightTitle, {color: colors.textPrimary}]}>{insight.title}</Text>
+                    <Text style={[styles.aiInsightDesc, {color: colors.textSecondary}]}>{insight.description}</Text>
                   </View>
                 </View>
               ))}
@@ -418,10 +423,10 @@ const StatsScreen: React.FC = () => {
           )}
         </>
       ) : (
-        <View style={styles.emptyCard}>
+        <View style={[styles.emptyCard, {backgroundColor: colors.surface}, shadows.card]}>
           <Text style={styles.emptyIcon}>📊</Text>
-          <Text style={styles.emptyTitle}>아직 데이터가 부족해요</Text>
-          <Text style={styles.emptyDesc}>
+          <Text style={[styles.emptyTitle, {color: colors.textPrimary}]}>아직 데이터가 부족해요</Text>
+          <Text style={[styles.emptyDesc, {color: colors.textSecondary}]}>
             매일 사용하면 여기에 통계가 표시됩니다
           </Text>
         </View>

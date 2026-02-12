@@ -13,6 +13,7 @@ import {
 import {InputMode} from '../types';
 import {INPUT_MODE_INFO} from '../utils/constants';
 import {useSettings} from '../contexts/SettingsContext';
+import {useTheme} from '../contexts/ThemeContext';
 import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 const {width} = Dimensions.get('window');
@@ -45,6 +46,7 @@ const steps = [
 
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({onComplete}) => {
   const {setInputMode} = useSettings();
+  const {colors, shadows} = useTheme();
   const [step, setStep] = useState(0);
   const [selectedMode, setSelectedMode] = useState<InputMode>(InputMode.MANUAL);
 
@@ -62,7 +64,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({onComplete}) => {
   const currentStep = steps[step];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {backgroundColor: colors.background}]}>
       {/* 진행 표시 */}
       <View style={styles.progressRow}>
         {steps.map((_, idx) => (
@@ -70,7 +72,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({onComplete}) => {
             key={idx}
             style={[
               styles.progressDot,
-              idx <= step && styles.progressDotActive,
+              {backgroundColor: colors.gaugeBackground},
+              idx <= step && [styles.progressDotActive, {backgroundColor: colors.accent}],
             ]}
           />
         ))}
@@ -80,14 +83,14 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({onComplete}) => {
         {!currentStep.isSelection ? (
           <>
             <Text style={styles.emoji}>{currentStep.emoji}</Text>
-            <Text style={styles.title}>{currentStep.title}</Text>
-            <Text style={styles.subtitle}>{currentStep.subtitle}</Text>
-            <Text style={styles.description}>{currentStep.description}</Text>
+            <Text style={[styles.title, {color: colors.textPrimary}]}>{currentStep.title}</Text>
+            <Text style={[styles.subtitle, {color: colors.textSecondary}]}>{currentStep.subtitle}</Text>
+            <Text style={[styles.description, {color: colors.textTertiary}]}>{currentStep.description}</Text>
           </>
         ) : (
           <>
-            <Text style={styles.title}>{currentStep.title}</Text>
-            <Text style={styles.subtitle}>{currentStep.subtitle}</Text>
+            <Text style={[styles.title, {color: colors.textPrimary}]}>{currentStep.title}</Text>
+            <Text style={[styles.subtitle, {color: colors.textSecondary}]}>{currentStep.subtitle}</Text>
 
             <View style={styles.modeList}>
               {([InputMode.WATCH, InputMode.PHONE, InputMode.MANUAL] as InputMode[]).map(
@@ -97,25 +100,25 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({onComplete}) => {
                   return (
                     <TouchableOpacity
                       key={mode}
-                      style={[styles.modeCard, isSelected && styles.modeCardSelected]}
+                      style={[styles.modeCard, {backgroundColor: colors.surface}, shadows.card, isSelected && [styles.modeCardSelected, {borderColor: colors.accent, backgroundColor: colors.accentLight}]]}
                       onPress={() => setSelectedMode(mode)}
                       activeOpacity={0.7}>
                       <Text style={styles.modeEmoji}>{info.emoji}</Text>
                       <View style={styles.modeInfo}>
-                        <Text style={[styles.modeName, isSelected && styles.modeNameSelected]}>
+                        <Text style={[styles.modeName, {color: colors.textPrimary}, isSelected && {color: colors.accent}]}>
                           {info.displayName}
                         </Text>
-                        <Text style={styles.modeDesc}>{info.description}</Text>
+                        <Text style={[styles.modeDesc, {color: colors.textSecondary}]}>{info.description}</Text>
                         <View style={styles.modeSourcesRow}>
                           {info.dataSources.map((src, idx) => (
-                            <View key={idx} style={styles.sourceChip}>
-                              <Text style={styles.sourceChipText}>{src}</Text>
+                            <View key={idx} style={[styles.sourceChip, {backgroundColor: colors.divider}]}>
+                              <Text style={[styles.sourceChipText, {color: colors.textSecondary}]}>{src}</Text>
                             </View>
                           ))}
                         </View>
                       </View>
                       {isSelected && (
-                        <View style={styles.checkCircle}>
+                        <View style={[styles.checkCircle, {backgroundColor: colors.accent}]}>
                           <Text style={styles.checkText}>✓</Text>
                         </View>
                       )}
@@ -131,7 +134,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({onComplete}) => {
       {/* 하단 버튼 */}
       <View style={styles.bottomArea}>
         <TouchableOpacity
-          style={styles.nextButton}
+          style={[styles.nextButton, {backgroundColor: colors.accent}]}
           onPress={handleNext}
           activeOpacity={0.8}>
           <Text style={styles.nextButtonText}>
@@ -140,7 +143,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({onComplete}) => {
         </TouchableOpacity>
         {step === 0 && (
           <TouchableOpacity onPress={onComplete} activeOpacity={0.6}>
-            <Text style={styles.skipText}>건너뛰기</Text>
+            <Text style={[styles.skipText, {color: colors.textTertiary}]}>건너뛰기</Text>
           </TouchableOpacity>
         )}
       </View>

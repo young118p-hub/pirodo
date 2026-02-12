@@ -16,6 +16,7 @@ import {
 import {useFatigue} from '../contexts/FatigueContext';
 import {ActivityType, InputMode} from '../types';
 import {ACTIVITY_TYPE_INFO, INPUT_MODE_INFO} from '../utils/constants';
+import {useTheme} from '../contexts/ThemeContext';
 import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 interface AddActivityScreenProps {
@@ -23,6 +24,7 @@ interface AddActivityScreenProps {
 }
 
 const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
+  const {colors, shadows} = useTheme();
   const {addActivity, inputMode} = useFatigue();
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null);
   const [hours, setHours] = useState('0');
@@ -84,19 +86,19 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, {backgroundColor: colors.background}]} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
         {/* 자동 추적 배너 */}
         {inputMode !== InputMode.MANUAL && (
-          <View style={styles.autoBanner}>
+          <View style={[styles.autoBanner, {backgroundColor: colors.accentLight}]}>
             <Text style={styles.autoBannerEmoji}>
               {INPUT_MODE_INFO[inputMode].emoji}
             </Text>
             <View style={styles.autoBannerContent}>
-              <Text style={styles.autoBannerTitle}>
+              <Text style={[styles.autoBannerTitle, {color: colors.accent}]}>
                 {INPUT_MODE_INFO[inputMode].displayName} 모드 활성
               </Text>
-              <Text style={styles.autoBannerDesc}>
+              <Text style={[styles.autoBannerDesc, {color: colors.textSecondary}]}>
                 걸음수, 수면 등이 자동 기록됩니다. 여기서는 보충 활동만 추가하세요.
               </Text>
             </View>
@@ -105,19 +107,21 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
 
         {/* 피로 증가 활동 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>피로 증가 활동</Text>
+          <Text style={[styles.sectionTitle, {color: colors.textPrimary}]}>피로 증가 활동</Text>
           <View style={styles.grid}>
             {fatigueActivities.map(info => (
               <TouchableOpacity
                 key={info.type}
                 style={[
                   styles.activityCard,
+                  {backgroundColor: colors.surface},
+                  shadows.subtle,
                   selectedType === info.type && styles.activityCardSelected,
                 ]}
                 onPress={() => setSelectedType(info.type)}
                 activeOpacity={0.7}>
                 <Text style={styles.activityEmoji}>{info.emoji}</Text>
-                <Text style={styles.activityName}>{info.displayName}</Text>
+                <Text style={[styles.activityName, {color: colors.textPrimary}]}>{info.displayName}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -125,20 +129,21 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
 
         {/* 회복 활동 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>회복 활동</Text>
+          <Text style={[styles.sectionTitle, {color: colors.textPrimary}]}>회복 활동</Text>
           <View style={styles.grid}>
             {recoveryActivities.map(info => (
               <TouchableOpacity
                 key={info.type}
                 style={[
                   styles.activityCard,
-                  styles.recoveryCard,
+                  {backgroundColor: colors.metricBg.sleep},
+                  shadows.subtle,
                   selectedType === info.type && styles.activityCardSelectedRecovery,
                 ]}
                 onPress={() => setSelectedType(info.type)}
                 activeOpacity={0.7}>
                 <Text style={styles.activityEmoji}>{info.emoji}</Text>
-                <Text style={styles.activityName}>{info.displayName}</Text>
+                <Text style={[styles.activityName, {color: colors.textPrimary}]}>{info.displayName}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -147,28 +152,28 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
         {/* 시간 입력 */}
         {selectedType && (
           <View style={styles.timeSection}>
-            <Text style={styles.sectionTitle}>시간 입력</Text>
-            <View style={styles.timeInputContainer}>
+            <Text style={[styles.sectionTitle, {color: colors.textPrimary}]}>시간 입력</Text>
+            <View style={[styles.timeInputContainer, {backgroundColor: colors.surface}, shadows.card]}>
               <View style={styles.timeInput}>
                 <TextInput
-                  style={styles.timeTextInput}
+                  style={[styles.timeTextInput, {color: colors.accent}]}
                   value={hours}
                   onChangeText={setHours}
                   keyboardType="number-pad"
                   maxLength={2}
                 />
-                <Text style={styles.timeLabel}>시간</Text>
+                <Text style={[styles.timeLabel, {color: colors.textSecondary}]}>시간</Text>
               </View>
-              <Text style={styles.timeSeparator}>:</Text>
+              <Text style={[styles.timeSeparator, {color: colors.accent}]}>:</Text>
               <View style={styles.timeInput}>
                 <TextInput
-                  style={styles.timeTextInput}
+                  style={[styles.timeTextInput, {color: colors.accent}]}
                   value={minutes}
                   onChangeText={setMinutes}
                   keyboardType="number-pad"
                   maxLength={2}
                 />
-                <Text style={styles.timeLabel}>분</Text>
+                <Text style={[styles.timeLabel, {color: colors.textSecondary}]}>분</Text>
               </View>
             </View>
           </View>
@@ -177,13 +182,13 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
         {/* 메모 */}
         {selectedType && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>메모 (선택사항)</Text>
+            <Text style={[styles.sectionTitle, {color: colors.textPrimary}]}>메모 (선택사항)</Text>
             <TextInput
-              style={styles.noteInput}
+              style={[styles.noteInput, {backgroundColor: colors.surface, color: colors.textPrimary}, shadows.subtle]}
               value={note}
               onChangeText={setNote}
               placeholder="메모를 입력하세요..."
-              placeholderTextColor={COLORS.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               multiline
               numberOfLines={3}
             />
@@ -193,7 +198,7 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
         {/* 추가 버튼 */}
         {selectedType && (
           <TouchableOpacity
-            style={styles.addButton}
+            style={[styles.addButton, {backgroundColor: colors.accent}]}
             onPress={handleAdd}
             activeOpacity={0.7}>
             <Text style={styles.addButtonText}>활동 추가</Text>

@@ -5,6 +5,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, Vibration} from 'react-native';
 import {RecoveryTip, ActivityType} from '../types';
+import {useTheme} from '../contexts/ThemeContext';
 import {COLORS, SHADOWS, SPACING, RADIUS} from '../utils/theme';
 
 interface RecoveryCardProps {
@@ -13,6 +14,7 @@ interface RecoveryCardProps {
 }
 
 const RecoveryCard: React.FC<RecoveryCardProps> = ({tip, onQuickAdd}) => {
+  const {colors, shadows} = useTheme();
   const [timerActive, setTimerActive] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [timerDone, setTimerDone] = useState(false);
@@ -94,34 +96,34 @@ const RecoveryCard: React.FC<RecoveryCardProps> = ({tip, onQuickAdd}) => {
     : 0;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, {backgroundColor: colors.surface}, shadows.card]}>
       <View style={styles.row}>
         <Text style={styles.emoji}>{tip.emoji}</Text>
         <View style={styles.content}>
-          <Text style={styles.title}>{tip.title}</Text>
-          <Text style={styles.description}>{tip.description}</Text>
+          <Text style={[styles.title, {color: colors.textPrimary}]}>{tip.title}</Text>
+          <Text style={[styles.description, {color: colors.textSecondary}]}>{tip.description}</Text>
         </View>
       </View>
 
       {/* 타이머 표시 */}
       {timerActive && (
         <View style={styles.timerSection}>
-          <View style={styles.timerBarBg}>
+          <View style={[styles.timerBarBg, {backgroundColor: colors.gaugeBackground}]}>
             <View
               style={[
                 styles.timerBarFill,
-                {width: `${Math.min(progress * 100, 100)}%`},
+                {width: `${Math.min(progress * 100, 100)}%`, backgroundColor: colors.accent},
               ]}
             />
           </View>
-          <Text style={styles.timerText}>{formatTime(remainingSeconds)}</Text>
+          <Text style={[styles.timerText, {color: colors.accent}]}>{formatTime(remainingSeconds)}</Text>
         </View>
       )}
 
       {/* 완료 메시지 */}
       {timerDone && !timerActive && (
         <View style={styles.doneSection}>
-          <Text style={styles.doneText}>완료! 수고했어요 💪</Text>
+          <Text style={[styles.doneText, {color: colors.fatigue.excellent}]}>완료! 수고했어요 💪</Text>
         </View>
       )}
 
@@ -130,14 +132,16 @@ const RecoveryCard: React.FC<RecoveryCardProps> = ({tip, onQuickAdd}) => {
         <TouchableOpacity
           style={[
             styles.actionButton,
+            {backgroundColor: colors.accentLight},
             timerActive && styles.actionButtonStop,
-            timerDone && !timerActive && styles.actionButtonDone,
+            timerDone && !timerActive && {backgroundColor: colors.accentLight},
           ]}
           onPress={handleAction}
           activeOpacity={0.7}>
           <Text
             style={[
               styles.actionButtonText,
+              {color: colors.accent},
               timerActive && styles.actionButtonTextStop,
             ]}>
             {timerActive
