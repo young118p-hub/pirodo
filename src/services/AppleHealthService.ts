@@ -26,7 +26,6 @@ export class AppleHealthService implements IHealthService {
       //     resolve(!err && available);
       //   });
       // });
-      console.log('[AppleHealthService] HealthKit 가용성 확인 (미설치 상태)');
       return false;
     } catch {
       return false;

@@ -48,7 +48,6 @@ export class SleepEstimator {
       this.saveHistory();
     });
 
-    console.log('[SleepEstimator] 수면 추정 시작 (개선판)');
   }
 
   /**
@@ -212,7 +211,6 @@ export class SleepEstimator {
   stop(): void {
     this.subscription?.remove();
     this.subscription = null;
-    console.log('[SleepEstimator] 수면 추정 중지');
   }
 
   private pruneHistory(): void {
@@ -224,7 +222,7 @@ export class SleepEstimator {
     try {
       await AsyncStorage.setItem(SLEEP_HISTORY_KEY, JSON.stringify(this.history));
     } catch (e) {
-      console.error('[SleepEstimator] 기록 저장 실패:', e);
+      if (__DEV__) console.error('[SleepEstimator] 기록 저장 실패:', e);
     }
   }
 
@@ -236,7 +234,7 @@ export class SleepEstimator {
         this.pruneHistory();
       }
     } catch (e) {
-      console.error('[SleepEstimator] 기록 로드 실패:', e);
+      if (__DEV__) console.error('[SleepEstimator] 기록 로드 실패:', e);
     }
   }
 
@@ -249,7 +247,7 @@ export class SleepEstimator {
     try {
       await AsyncStorage.setItem(SLEEP_RECORDS_KEY, JSON.stringify(this.sleepRecords));
     } catch (e) {
-      console.error('[SleepEstimator] 수면 기록 저장 실패:', e);
+      if (__DEV__) console.error('[SleepEstimator] 수면 기록 저장 실패:', e);
     }
   }
 
@@ -260,7 +258,7 @@ export class SleepEstimator {
         this.sleepRecords = JSON.parse(stored);
       }
     } catch (e) {
-      console.error('[SleepEstimator] 수면 기록 로드 실패:', e);
+      if (__DEV__) console.error('[SleepEstimator] 수면 기록 로드 실패:', e);
     }
   }
 }

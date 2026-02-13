@@ -27,7 +27,6 @@ export class SamsungHealthService extends GoogleFitService {
       // if (stressData.length === 0) return null;
       // return stressData[stressData.length - 1].score;
 
-      console.log('[SamsungHealthService] 스트레스 레벨 조회 (미설치 상태)');
       return null;
     } catch {
       return null;

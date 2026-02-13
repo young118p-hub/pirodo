@@ -41,8 +41,6 @@ export class SedentaryDetector {
     this.lastSignificantMotion = new Date();
     this.alertedStages.clear();
 
-    console.log('[SedentaryDetector] 앉아있기 감지 시작 (개선판)');
-
     // AppState 모니터링 - 앱이 foreground로 오면 폰을 사용 중 = 어느정도 움직임
     this.appStateSubscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
@@ -93,7 +91,6 @@ export class SedentaryDetector {
         autoDetected: true,
       };
 
-      console.log(`[SedentaryDetector] 앉아있기 감지: ${event.durationMinutes}분`);
       this.onSedentaryDetected(event);
 
       // 타이머 리셋 (중복 이벤트 방지)
@@ -128,7 +125,6 @@ export class SedentaryDetector {
       clearInterval(this.checkInterval);
       this.checkInterval = null;
     }
-    console.log('[SedentaryDetector] 앉아있기 감지 중지');
   }
 
   updateSettings(settings: AppSettings): void {

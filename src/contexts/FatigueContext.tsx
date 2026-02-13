@@ -308,7 +308,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
 
       setHealthData(snapshot);
     } catch (e) {
-      console.error('건강 데이터 갱신 실패:', e);
+      if (__DEV__) console.error('건강 데이터 갱신 실패:', e);
     }
   }, [settings.inputMode]);
 
@@ -363,7 +363,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
         }
       }
     } catch (error) {
-      console.error('Failed to load data:', error);
+      if (__DEV__) console.error('Failed to load data:', error);
       resetDailyData();
     } finally {
       setIsLoading(false);
@@ -379,7 +379,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
       };
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     } catch (error) {
-      console.error('Failed to save data:', error);
+      if (__DEV__) console.error('Failed to save data:', error);
     }
   };
 

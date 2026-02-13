@@ -42,7 +42,7 @@ export class WidgetService {
         await NativeModules.WidgetModule.updateWidget(JSON.stringify(data));
       }
     } catch (e) {
-      console.error('[WidgetService] 위젯 데이터 업데이트 실패:', e);
+      if (__DEV__) console.error('[WidgetService] 위젯 데이터 업데이트 실패:', e);
     }
   }
 

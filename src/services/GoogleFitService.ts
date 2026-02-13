@@ -26,7 +26,6 @@ export class GoogleFitService implements IHealthService {
     try {
       // const status = await getSdkStatus();
       // return status === SdkAvailabilityStatus.SDK_AVAILABLE;
-      console.log('[GoogleFitService] Health Connect 가용성 확인 (미설치 상태)');
       return false;
     } catch {
       return false;
@@ -43,7 +42,6 @@ export class GoogleFitService implements IHealthService {
       // ];
       // const granted = await requestPermission(permissions);
       // return granted.length > 0;
-      console.log('[GoogleFitService] 권한 요청 (미설치 상태)');
       return false;
     } catch {
       return false;

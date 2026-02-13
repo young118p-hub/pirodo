@@ -32,7 +32,7 @@ export class HistoryService {
 
       await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(sorted));
     } catch (error) {
-      console.error('히스토리 저장 실패:', error);
+      if (__DEV__) console.error('히스토리 저장 실패:', error);
     }
   }
 
@@ -47,7 +47,7 @@ export class HistoryService {
       if (!Array.isArray(parsed)) return [];
       return parsed;
     } catch (error) {
-      console.error('히스토리 로드 실패:', error);
+      if (__DEV__) console.error('히스토리 로드 실패:', error);
       return [];
     }
   }

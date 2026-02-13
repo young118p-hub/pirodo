@@ -37,7 +37,7 @@ export const SettingsProvider: React.FC<{children: React.ReactNode}> = ({childre
           setSettings({...DEFAULT_SETTINGS, ...parsed});
         }
       } catch (e) {
-        console.error('설정 로드 실패:', e);
+        if (__DEV__) console.error('설정 로드 실패:', e);
       } finally {
         setIsLoading(false);
       }
@@ -50,7 +50,7 @@ export const SettingsProvider: React.FC<{children: React.ReactNode}> = ({childre
     try {
       await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
     } catch (e) {
-      console.error('설정 저장 실패:', e);
+      if (__DEV__) console.error('설정 저장 실패:', e);
     }
   }, []);
 
