@@ -23,12 +23,12 @@ export function createHealthService(inputMode: InputMode): IHealthService {
     return new NullHealthService();
   }
 
+  // AUTO 모드: 플랫폼별 건강 서비스 (워치+폰 데이터 통합)
   if (Platform.OS === 'ios') {
     const {AppleHealthService} = require('./AppleHealthService');
     return new AppleHealthService();
   }
 
-  // Android: Health Connect (Galaxy Watch 데이터도 포함)
   const {GoogleFitService} = require('./GoogleFitService');
   return new GoogleFitService();
 }

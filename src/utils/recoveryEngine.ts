@@ -155,6 +155,16 @@ export function getRecoveryTips(
     });
   }
 
+  // 좋은 상태일 때 유지 팁
+  if (fatiguePercentage < 40 && tips.length === 0) {
+    tips.push({
+      emoji: '💪',
+      title: '컨디션 좋아요!',
+      description: '지금 상태를 유지하세요. 가벼운 스트레칭도 좋아요.',
+      priority: 10,
+    });
+  }
+
   // 우선순위 정렬 후 최대 3개
   return tips.sort((a, b) => a.priority - b.priority).slice(0, 3);
 }

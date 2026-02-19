@@ -26,7 +26,6 @@ const DATA_SOURCE_LABELS: Record<string, string> = {
   [DataSource.APPLE_HEALTH]: 'Apple Health',
   [DataSource.GOOGLE_FIT]: 'Google Fit',
   [DataSource.SAMSUNG_HEALTH]: 'Samsung Health',
-  [DataSource.PHONE_SENSOR]: '폰 센서',
   [DataSource.PHONE_ESTIMATED]: '수면 추정',
   [DataSource.AUTO_SEDENTARY]: '자동 감지',
   [DataSource.MANUAL_ACTIVITY]: '수동',

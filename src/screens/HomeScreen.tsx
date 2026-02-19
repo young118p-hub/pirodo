@@ -15,10 +15,8 @@ import {
 import Slider from '@react-native-community/slider';
 import {useFatigue} from '../contexts/FatigueContext';
 import FatigueCircle from '../components/FatigueCircle';
-import {
-  INPUT_MODE_INFO,
-} from '../utils/constants';
-import {InputMode, ActivityType} from '../types';
+import {InputMode} from '../types';
+import {ActivityType} from '../types';
 import {getRecoveryTips} from '../utils/recoveryEngine';
 import RecoveryCard from '../components/RecoveryCard';
 import {useTheme} from '../contexts/ThemeContext';
@@ -37,7 +35,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
     isLoading,
     inputMode,
     healthData,
-    dataSourceLabel,
     setManualSliderValue,
     addActivity,
   } = useFatigue();
@@ -139,11 +136,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
             thumbTintColor={getSliderColor(sliderValue)}
           />
           <View style={styles.sliderLabels}>
-            <Text style={[styles.sliderLabelText, {color: colors.textTertiary}]}>최고</Text>
+            <Text style={[styles.sliderLabelText, {color: colors.textTertiary}]}>피로 0%</Text>
             <Text style={[styles.sliderValueText, {color: getSliderColor(sliderValue)}]}>
               {Math.round(sliderValue)}%
             </Text>
-            <Text style={[styles.sliderLabelText, {color: colors.textTertiary}]}>탈진</Text>
+            <Text style={[styles.sliderLabelText, {color: colors.textTertiary}]}>피로 100%</Text>
           </View>
         </View>
       )}
@@ -152,11 +149,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       <View style={[styles.gaugeCard, {backgroundColor: colors.surface}, shadows.card]}>
         <FatigueCircle percentage={fatiguePercentage} size={240} />
         <Text style={[styles.fatigueMessage, {color: colors.textSecondary}]}>{fatigueMessage}</Text>
-        <View style={[styles.sourceBadge, {backgroundColor: colors.accentLight}]}>
-          <Text style={[styles.sourceBadgeText, {color: colors.accent}]}>
-            {INPUT_MODE_INFO[inputMode].emoji} {dataSourceLabel}
-          </Text>
-        </View>
       </View>
 
       {/* 핵심 지표 3개 */}
@@ -343,18 +335,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: 'center',
   },
-  sourceBadge: {
-    backgroundColor: COLORS.accentLight,
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginTop: 10,
-  },
-  sourceBadgeText: {
-    ...TYPOGRAPHY.small,
-    color: COLORS.accent,
-  },
-
   // 핵심 지표
   metricsRow: {
     flexDirection: 'row',

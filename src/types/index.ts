@@ -34,12 +34,11 @@ export interface ActivityTypeInfo {
 }
 
 /**
- * 입력 모드 (3단계 티어)
+ * 입력 모드
  */
 export enum InputMode {
-  WATCH = 'WATCH',     // Tier A: 스마트워치
-  PHONE = 'PHONE',     // Tier B: 폰 센서만
-  MANUAL = 'MANUAL',   // Tier C: 간편 슬라이더
+  AUTO = 'AUTO',       // 자동: 워치+폰 건강 데이터 통합
+  MANUAL = 'MANUAL',   // 수동: 간편 슬라이더
 }
 
 /**
@@ -49,7 +48,6 @@ export enum DataSource {
   APPLE_HEALTH = 'APPLE_HEALTH',
   GOOGLE_FIT = 'GOOGLE_FIT',
   SAMSUNG_HEALTH = 'SAMSUNG_HEALTH',
-  PHONE_SENSOR = 'PHONE_SENSOR',
   PHONE_ESTIMATED = 'PHONE_ESTIMATED',
   MANUAL_SLIDER = 'MANUAL_SLIDER',
   MANUAL_ACTIVITY = 'MANUAL_ACTIVITY',

@@ -1,5 +1,5 @@
 /**
- * 온보딩 화면 - 첫 실행 시 입력 모드 선택 가이드
+ * 온보딩 화면 - 첫 실행 시 앱 소개
  */
 
 import React, {useState} from 'react';
@@ -8,15 +8,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
-import {InputMode} from '../types';
-import {INPUT_MODE_INFO} from '../utils/constants';
-import {useSettings} from '../contexts/SettingsContext';
 import {useTheme} from '../contexts/ThemeContext';
-import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
-
-const {width} = Dimensions.get('window');
+import {COLORS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -30,30 +24,18 @@ const steps = [
     emoji: '🔋',
   },
   {
-    title: '측정 방식 선택',
-    subtitle: '나에게 맞는 방법을 골라주세요',
-    description: '',
-    emoji: '',
-    isSelection: true,
-  },
-  {
     title: '준비 완료!',
     subtitle: '이제 시작해볼까요?',
-    description: '매일 사용할수록\n더 정확한 피로도를 알려드려요',
+    description: '워치와 폰의 건강 데이터를 자동으로 수집하고\n매일 사용할수록 더 정확해져요',
     emoji: '🚀',
   },
 ];
 
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({onComplete}) => {
-  const {setInputMode} = useSettings();
-  const {colors, shadows} = useTheme();
+  const {colors} = useTheme();
   const [step, setStep] = useState(0);
-  const [selectedMode, setSelectedMode] = useState<InputMode>(InputMode.MANUAL);
 
   const handleNext = () => {
-    if (step === 1) {
-      setInputMode(selectedMode);
-    }
     if (step >= steps.length - 1) {
       onComplete();
     } else {
@@ -80,55 +62,10 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({onComplete}) => {
       </View>
 
       <View style={styles.contentArea}>
-        {!currentStep.isSelection ? (
-          <>
-            <Text style={styles.emoji}>{currentStep.emoji}</Text>
-            <Text style={[styles.title, {color: colors.textPrimary}]}>{currentStep.title}</Text>
-            <Text style={[styles.subtitle, {color: colors.textSecondary}]}>{currentStep.subtitle}</Text>
-            <Text style={[styles.description, {color: colors.textTertiary}]}>{currentStep.description}</Text>
-          </>
-        ) : (
-          <>
-            <Text style={[styles.title, {color: colors.textPrimary}]}>{currentStep.title}</Text>
-            <Text style={[styles.subtitle, {color: colors.textSecondary}]}>{currentStep.subtitle}</Text>
-
-            <View style={styles.modeList}>
-              {([InputMode.WATCH, InputMode.PHONE, InputMode.MANUAL] as InputMode[]).map(
-                mode => {
-                  const info = INPUT_MODE_INFO[mode];
-                  const isSelected = selectedMode === mode;
-                  return (
-                    <TouchableOpacity
-                      key={mode}
-                      style={[styles.modeCard, {backgroundColor: colors.surface}, shadows.card, isSelected && [styles.modeCardSelected, {borderColor: colors.accent, backgroundColor: colors.accentLight}]]}
-                      onPress={() => setSelectedMode(mode)}
-                      activeOpacity={0.7}>
-                      <Text style={styles.modeEmoji}>{info.emoji}</Text>
-                      <View style={styles.modeInfo}>
-                        <Text style={[styles.modeName, {color: colors.textPrimary}, isSelected && {color: colors.accent}]}>
-                          {info.displayName}
-                        </Text>
-                        <Text style={[styles.modeDesc, {color: colors.textSecondary}]}>{info.description}</Text>
-                        <View style={styles.modeSourcesRow}>
-                          {info.dataSources.map((src, idx) => (
-                            <View key={idx} style={[styles.sourceChip, {backgroundColor: colors.divider}]}>
-                              <Text style={[styles.sourceChipText, {color: colors.textSecondary}]}>{src}</Text>
-                            </View>
-                          ))}
-                        </View>
-                      </View>
-                      {isSelected && (
-                        <View style={[styles.checkCircle, {backgroundColor: colors.accent}]}>
-                          <Text style={styles.checkText}>✓</Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                },
-              )}
-            </View>
-          </>
-        )}
+        <Text style={styles.emoji}>{currentStep.emoji}</Text>
+        <Text style={[styles.title, {color: colors.textPrimary}]}>{currentStep.title}</Text>
+        <Text style={[styles.subtitle, {color: colors.textSecondary}]}>{currentStep.subtitle}</Text>
+        <Text style={[styles.description, {color: colors.textTertiary}]}>{currentStep.description}</Text>
       </View>
 
       {/* 하단 버튼 */}
@@ -175,7 +112,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent,
     width: 24,
   },
-
   contentArea: {
     flex: 1,
     alignItems: 'center',
@@ -205,79 +141,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
-
-  // 모드 선택
-  modeList: {
-    width: '100%',
-    gap: 12,
-    marginTop: 20,
-  },
-  modeCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.card,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-    ...SHADOWS.card,
-  },
-  modeCardSelected: {
-    borderColor: COLORS.accent,
-    backgroundColor: COLORS.accentLight,
-  },
-  modeEmoji: {
-    fontSize: 32,
-    marginRight: 14,
-  },
-  modeInfo: {
-    flex: 1,
-  },
-  modeName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 2,
-  },
-  modeNameSelected: {
-    color: COLORS.accent,
-  },
-  modeDesc: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginBottom: 6,
-  },
-  modeSourcesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  sourceChip: {
-    backgroundColor: COLORS.divider,
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  sourceChipText: {
-    fontSize: 10,
-    color: COLORS.textSecondary,
-  },
-  checkCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-  },
-  checkText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  // 하단
   bottomArea: {
     alignItems: 'center',
     gap: 16,

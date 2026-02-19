@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import {useFatigue} from '../contexts/FatigueContext';
 import {ActivityType, InputMode} from '../types';
-import {ACTIVITY_TYPE_INFO, INPUT_MODE_INFO} from '../utils/constants';
+import {ACTIVITY_TYPE_INFO} from '../utils/constants';
 import {useTheme} from '../contexts/ThemeContext';
 import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
@@ -89,14 +89,12 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
     <ScrollView style={[styles.container, {backgroundColor: colors.background}]} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
         {/* 자동 추적 배너 */}
-        {inputMode !== InputMode.MANUAL && (
+        {inputMode === InputMode.AUTO && (
           <View style={[styles.autoBanner, {backgroundColor: colors.accentLight}]}>
-            <Text style={styles.autoBannerEmoji}>
-              {INPUT_MODE_INFO[inputMode].emoji}
-            </Text>
+            <Text style={styles.autoBannerEmoji}>⌚</Text>
             <View style={styles.autoBannerContent}>
               <Text style={[styles.autoBannerTitle, {color: colors.accent}]}>
-                {INPUT_MODE_INFO[inputMode].displayName} 모드 활성
+                자동 측정 활성
               </Text>
               <Text style={[styles.autoBannerDesc, {color: colors.textSecondary}]}>
                 걸음수, 수면 등이 자동 기록됩니다. 여기서는 보충 활동만 추가하세요.

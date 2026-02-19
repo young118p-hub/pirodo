@@ -64,28 +64,6 @@ const calculateBalancePenalty = (activities: ActivityRecord[]): number => {
 };
 
 /**
- * 피로도 계산 (0-100)
- */
-export const calculateFatigue = (
-  activities: ActivityRecord[],
-  baselineFatigue: number = 50,
-): number => {
-  let fatigue = baselineFatigue;
-
-  // 각 활동의 영향 합산
-  activities.forEach(activity => {
-    fatigue += calculateActivityImpact(activity);
-  });
-
-  // 보너스/페널티 적용
-  fatigue += calculateSleepBonus(activities);
-  fatigue += calculateBalancePenalty(activities);
-
-  // 0-100 범위로 제한
-  return Math.max(0, Math.min(100, Math.round(fatigue)));
-};
-
-/**
  * 활동별 기여도 계산
  */
 export const calculateContributions = (

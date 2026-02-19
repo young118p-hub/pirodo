@@ -48,7 +48,6 @@ interface FatigueContextType {
   inputMode: InputMode;
   healthData: HealthDataSnapshot | null;
   sedentaryEvents: SedentaryEvent[];
-  dataSourceLabel: string;
   addActivity: (
     activityType: ActivityType,
     durationMinutes: number,
@@ -76,11 +75,6 @@ const IDLE_REST_THRESHOLD = 15 * 60 * 1000; // 15분 이상 백그라운드 → 
 const IDLE_REST_MAX = 60; // 최대 60분까지 인정
 const IDLE_REST_RATE = 0.5; // 유휴 1분 = 휴식 0.5분으로 환산
 
-const DATA_SOURCE_LABELS: Record<InputMode, string> = {
-  [InputMode.WATCH]: 'Watch',
-  [InputMode.PHONE]: 'Phone',
-  [InputMode.MANUAL]: 'Manual',
-};
 
 export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => {
   const {settings} = useSettings();
@@ -111,9 +105,9 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
     loadData();
   }, []);
 
-  // 알림 "했어요!" 콜백 등록
+  // 알림 "했어요!" 콜백 등록 + 포그라운드 리스너
   useEffect(() => {
-    NotificationService.registerActionCallback((rewardAmount: number) => {
+    const addRewardActivity = (rewardAmount: number) => {
       const restActivity: ActivityRecord = {
         id: generateId('action_'),
         type: ActivityType.REST,
@@ -128,7 +122,36 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
         ...prev,
         activities: [...prev.activities, restActivity],
       }));
+    };
+
+    NotificationService.registerActionCallback(addRewardActivity);
+    const unsubscribe = NotificationService.setupForegroundListener();
+
+    // 백그라운드에서 "했어요!" 눌렀을 때 저장된 pending reward 처리
+    const ACTION_REWARDS: Record<string, number> = {
+      fatigue_tired: 3,
+      fatigue_exhausted: 5,
+      sedentary: 4,
+      sleep_deficit: 2,
+    };
+
+    AsyncStorage.getItem('@pirodo_pending_reward').then(raw => {
+      if (raw) {
+        try {
+          const {type, timestamp} = JSON.parse(raw);
+          // 1시간 이내의 pending reward만 처리
+          if (Date.now() - timestamp < 60 * 60 * 1000) {
+            const reward = ACTION_REWARDS[type];
+            if (reward) {
+              addRewardActivity(reward);
+            }
+          }
+        } catch (_) {}
+        AsyncStorage.removeItem('@pirodo_pending_reward');
+      }
     });
+
+    return unsubscribe;
   }, []);
 
   // 폰 유휴 감지 (백그라운드 → 포그라운드 복귀 시)
@@ -285,7 +308,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
   useEffect(() => {
     sleepEstimatorRef.current?.stop();
 
-    if (settings.inputMode === InputMode.PHONE) {
+    if (settings.inputMode === InputMode.AUTO) {
       sleepEstimatorRef.current = new SleepEstimator();
       sleepEstimatorRef.current.start();
     }
@@ -326,7 +349,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
 
       // 폰 수면 추정
       let estimatedSleepData = null;
-      if (settings.inputMode === InputMode.PHONE && sleepEstimatorRef.current) {
+      if (settings.inputMode === InputMode.AUTO && sleepEstimatorRef.current) {
         estimatedSleepData = sleepEstimatorRef.current.estimateSleep();
       }
 
@@ -562,7 +585,6 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
         inputMode: settings.inputMode,
         healthData,
         sedentaryEvents,
-        dataSourceLabel: DATA_SOURCE_LABELS[settings.inputMode],
         addActivity,
         removeActivity,
         clearAllActivities,
