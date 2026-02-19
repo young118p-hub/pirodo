@@ -56,9 +56,23 @@ export const SettingsProvider: React.FC<{children: React.ReactNode}> = ({childre
 
   const updateSettings = useCallback((partial: Partial<AppSettings>) => {
     setSettings(prev => {
-      const updated = {...prev, ...partial};
-      saveSettings(updated);
-      return updated;
+      const merged = {...prev, ...partial};
+
+      // 값 범위 검증
+      const validated: AppSettings = {
+        ...merged,
+        sedentaryThresholdMinutes: Math.max(10, Math.min(120, merged.sedentaryThresholdMinutes)),
+        daytimeStartHour: Math.max(0, Math.min(23, Math.floor(merged.daytimeStartHour))),
+        daytimeEndHour: Math.max(1, Math.min(24, Math.floor(merged.daytimeEndHour))),
+      };
+
+      // daytimeStartHour < daytimeEndHour 보장
+      if (validated.daytimeStartHour >= validated.daytimeEndHour) {
+        validated.daytimeEndHour = Math.min(24, validated.daytimeStartHour + 1);
+      }
+
+      saveSettings(validated);
+      return validated;
     });
   }, [saveSettings]);
 

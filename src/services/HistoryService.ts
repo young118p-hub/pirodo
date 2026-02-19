@@ -5,6 +5,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {DailyHistoryRecord} from '../types';
+import {getLocalDateString} from '../utils/dateUtils';
 
 const HISTORY_KEY = '@pirodo_history';
 const MAX_DAYS = 90; // 3개월 보관
@@ -62,7 +63,7 @@ export class HistoryService {
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(date);
       const record = history.find(h => h.date === dateStr);
       result.push(record ?? null);
     }
@@ -80,7 +81,7 @@ export class HistoryService {
     for (let i = 29; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(date);
       const record = history.find(h => h.date === dateStr);
       result.push(record ?? null);
     }
@@ -152,7 +153,8 @@ export class HistoryService {
     const worstRecord = records.reduce((max, r) =>
       r.fatiguePercentage > max.fatiguePercentage ? r : max,
     );
-    const worstDate = new Date(worstRecord.date);
+    const [wy, wm, wd] = worstRecord.date.split('-').map(Number);
+    const worstDate = new Date(wy, wm - 1, wd);
     const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
     const worstDay = dayNames[worstDate.getDay()] + '요일';
 

@@ -116,7 +116,7 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
                   styles.activityCard,
                   {backgroundColor: colors.surface},
                   shadows.subtle,
-                  selectedType === info.type && styles.activityCardSelected,
+                  selectedType === info.type && [styles.activityCardSelected, {borderColor: colors.fatigue.tired, backgroundColor: colors.fatigue.tired + '18'}],
                 ]}
                 onPress={() => setSelectedType(info.type)}
                 activeOpacity={0.7}>
@@ -138,7 +138,7 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
                   styles.activityCard,
                   {backgroundColor: colors.metricBg.sleep},
                   shadows.subtle,
-                  selectedType === info.type && styles.activityCardSelectedRecovery,
+                  selectedType === info.type && [styles.activityCardSelectedRecovery, {borderColor: colors.fatigue.excellent, backgroundColor: colors.fatigue.excellent + '18'}],
                 ]}
                 onPress={() => setSelectedType(info.type)}
                 activeOpacity={0.7}>
@@ -153,6 +153,31 @@ const AddActivityScreen: React.FC<AddActivityScreenProps> = ({navigation}) => {
         {selectedType && (
           <View style={styles.timeSection}>
             <Text style={[styles.sectionTitle, {color: colors.textPrimary}]}>시간 입력</Text>
+            <View style={styles.presetRow}>
+              {[
+                {label: '5분', h: '0', m: '5'},
+                {label: '15분', h: '0', m: '15'},
+                {label: '30분', h: '0', m: '30'},
+                {label: '1시간', h: '1', m: '0'},
+              ].map(preset => {
+                const isActive = hours === preset.h && minutes === preset.m;
+                return (
+                  <TouchableOpacity
+                    key={preset.label}
+                    style={[
+                      styles.presetButton,
+                      {backgroundColor: colors.surface},
+                      isActive && {backgroundColor: colors.accentLight, borderColor: colors.accent},
+                    ]}
+                    onPress={() => { setHours(preset.h); setMinutes(preset.m); }}
+                    activeOpacity={0.7}>
+                    <Text style={[styles.presetText, {color: colors.textSecondary}, isActive && {color: colors.accent, fontWeight: '700'}]}>
+                      {preset.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
             <View style={[styles.timeInputContainer, {backgroundColor: colors.surface}, shadows.card]}>
               <View style={styles.timeInput}>
                 <TextInput
@@ -270,14 +295,8 @@ const styles = StyleSheet.create({
   recoveryCard: {
     backgroundColor: COLORS.metricBg.sleep,
   },
-  activityCardSelected: {
-    borderColor: COLORS.fatigue.tired,
-    backgroundColor: '#FFF5EB',
-  },
-  activityCardSelectedRecovery: {
-    borderColor: COLORS.fatigue.excellent,
-    backgroundColor: '#E8FFF9',
-  },
+  activityCardSelected: {},
+  activityCardSelectedRecovery: {},
   activityEmoji: {
     fontSize: 32,
     marginBottom: 5,
@@ -289,6 +308,23 @@ const styles = StyleSheet.create({
   },
   timeSection: {
     marginBottom: 28,
+  },
+  presetRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  presetButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: RADIUS.card,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  presetText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   timeInputContainer: {
     flexDirection: 'row',
@@ -331,7 +367,7 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: COLORS.accent,
-    borderRadius: RADIUS.small,
+    borderRadius: RADIUS.card,
     paddingVertical: 18,
     alignItems: 'center',
     marginTop: 10,

@@ -10,7 +10,8 @@ const PIRODO_KEYS = [
   '@pirodo_settings',
   '@pirodo_history',
   '@pirodo_daily_data',
-  '@pirodo_fatigue_context',
+  '@pirodo_theme',
+  '@pirodo_app_state_history',
 ];
 
 export interface BackupData {
@@ -32,15 +33,12 @@ export class BackupService {
     const pirodoKeys = allKeys.filter(key => key.startsWith('@pirodo_'));
 
     for (const key of pirodoKeys) {
-      try {
-        const value = await AsyncStorage.getItem(key);
-        if (value) {
+      const value = await AsyncStorage.getItem(key);
+      if (value) {
+        try {
           data[key] = JSON.parse(value);
-        }
-      } catch {
-        // parse 실패 시 raw string으로 저장
-        const value = await AsyncStorage.getItem(key);
-        if (value) {
+        } catch {
+          // parse 실패 시 raw string으로 저장
           data[key] = value;
         }
       }
@@ -80,24 +78,48 @@ export class BackupService {
    */
   static async importData(jsonString: string): Promise<{success: boolean; message: string}> {
     try {
+      // 크기 제한 (10MB)
+      if (jsonString.length > 10 * 1024 * 1024) {
+        return {success: false, message: '백업 파일이 너무 큽니다. (최대 10MB)'};
+      }
+
       const backup = JSON.parse(jsonString) as BackupData;
 
-      // 유효성 검증
+      // 스키마 검증
       if (backup.appName !== 'pirodo') {
         return {success: false, message: '유효하지 않은 백업 파일입니다.'};
       }
-      if (!backup.data || typeof backup.data !== 'object') {
-        return {success: false, message: '백업 데이터가 비어있습니다.'};
+      if (typeof backup.version !== 'number' || backup.version < 1) {
+        return {success: false, message: '지원하지 않는 백업 버전입니다.'};
+      }
+      if (!backup.data || typeof backup.data !== 'object' || Array.isArray(backup.data)) {
+        return {success: false, message: '백업 데이터가 비어있거나 형식이 잘못되었습니다.'};
+      }
+      if (!backup.createdAt || isNaN(Date.parse(backup.createdAt))) {
+        return {success: false, message: '백업 생성일이 유효하지 않습니다.'};
       }
 
-      // 데이터 복원
+      // 허용된 키만 복원
+      const allowedKeys = new Set(PIRODO_KEYS);
       let restoredCount = 0;
       for (const [key, value] of Object.entries(backup.data)) {
-        if (key.startsWith('@pirodo_')) {
-          const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-          await AsyncStorage.setItem(key, stringValue);
-          restoredCount++;
-        }
+        if (!key.startsWith('@pirodo_')) continue;
+        if (!allowedKeys.has(key)) continue;
+
+        // 값 검증: 직렬화 가능한 타입만 허용
+        if (value === null || value === undefined) continue;
+
+        const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+
+        // 개별 값 크기 제한 (1MB)
+        if (stringValue.length > 1024 * 1024) continue;
+
+        await AsyncStorage.setItem(key, stringValue);
+        restoredCount++;
+      }
+
+      if (restoredCount === 0) {
+        return {success: false, message: '복원할 수 있는 데이터가 없습니다.'};
       }
 
       return {

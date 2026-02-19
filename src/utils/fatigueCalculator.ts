@@ -246,12 +246,12 @@ const calculateStressImpact = (stressLevel: number): number => {
  * 걸음수 영향 (-8 ~ +8)
  */
 const calculateStepImpact = (steps: number): number => {
-  if (steps < 2000) return 8;      // 매우 비활동적
-  if (steps < 4000) return 3;      // 평균 이하
-  if (steps >= 5000 && steps <= 10000) return -8;  // 건강 범위
-  if (steps >= 10000 && steps <= 15000) return -5;  // 활동적
-  if (steps > 15000) return 3;     // 과도한 활동
-  return 0;
+  if (steps < 2000) return 8;       // 매우 비활동적
+  if (steps < 4000) return 3;       // 평균 이하
+  if (steps < 5000) return 0;       // 보통
+  if (steps <= 10000) return -8;    // 건강 범위
+  if (steps <= 15000) return -5;    // 활동적
+  return 3;                          // 과도한 활동
 };
 
 /**

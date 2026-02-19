@@ -37,13 +37,15 @@ const Tab = createBottomTabNavigator<TabParamList>();
 const TabIcon = ({
   label,
   focused,
+  color,
 }: {
   label: string;
   focused: boolean;
+  color: string;
 }) => (
   <View style={tabStyles.iconContainer}>
     <Text style={[tabStyles.icon, {opacity: focused ? 1 : 0.4}]}>{label}</Text>
-    {focused && <View style={tabStyles.dot} />}
+    {focused && <View style={[tabStyles.dot, {backgroundColor: color}]} />}
   </View>
 );
 
@@ -77,7 +79,7 @@ const MainTabs: React.FC = () => {
         component={HomeScreen}
         options={{
           tabBarLabel: '피로도',
-          tabBarIcon: ({focused}) => <TabIcon label="🔋" focused={focused} />,
+          tabBarIcon: ({focused, color}) => <TabIcon label="🔋" focused={focused} color={color} />,
         }}
       />
       <Tab.Screen
@@ -85,7 +87,7 @@ const MainTabs: React.FC = () => {
         component={StatsScreen}
         options={{
           tabBarLabel: '통계',
-          tabBarIcon: ({focused}) => <TabIcon label="📊" focused={focused} />,
+          tabBarIcon: ({focused, color}) => <TabIcon label="📊" focused={focused} color={color} />,
         }}
       />
       <Tab.Screen
@@ -93,7 +95,7 @@ const MainTabs: React.FC = () => {
         component={SettingsScreen}
         options={{
           tabBarLabel: '설정',
-          tabBarIcon: ({focused}) => <TabIcon label="⚙️" focused={focused} />,
+          tabBarIcon: ({focused, color}) => <TabIcon label="⚙️" focused={focused} color={color} />,
         }}
       />
     </Tab.Navigator>

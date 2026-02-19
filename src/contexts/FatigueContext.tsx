@@ -25,7 +25,6 @@ import {
   DataSource,
 } from '../types';
 import {
-  calculateFatigue,
   calculateFatigueV2,
   calculateFatigueStats,
 } from '../utils/fatigueCalculator';
@@ -38,6 +37,7 @@ import {NotificationService} from '../services/NotificationService';
 import {WidgetService} from '../services/WidgetService';
 import {DailyHistoryRecord} from '../types';
 import {getFatigueLevelFromPercentage, FATIGUE_LEVEL_INFO} from '../utils/constants';
+import {getLocalDateString} from '../utils/dateUtils';
 
 interface FatigueContextType {
   dailyData: DailyFatigueData;
@@ -67,6 +67,10 @@ const FatigueContext = createContext<FatigueContextType | undefined>(undefined);
 const STORAGE_KEY = '@pirodo_daily_data';
 const HEALTH_REFRESH_INTERVAL = 5 * 60 * 1000; // 5분
 
+// Activity ID 충돌 방지용 카운터
+let idCounter = 0;
+const generateId = (prefix: string = '') => `${prefix}${Date.now()}_${++idCounter}`;
+
 // 폰 유휴 자동 회복 설정
 const IDLE_REST_THRESHOLD = 15 * 60 * 1000; // 15분 이상 백그라운드 → 휴식 인정
 const IDLE_REST_MAX = 60; // 최대 60분까지 인정
@@ -82,7 +86,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
   const {settings} = useSettings();
 
   const [dailyData, setDailyData] = useState<DailyFatigueData>({
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDateString(),
     activities: [],
     currentFatiguePercentage: 50,
   });
@@ -98,6 +102,9 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
   const sedentaryDetectorRef = useRef<SedentaryDetector | null>(null);
   const sleepEstimatorRef = useRef<SleepEstimator | null>(null);
   const backgroundTimeRef = useRef<number | null>(null);
+  const resettingRef = useRef(false);
+  const latestDailyDataRef = useRef<DailyFatigueData | null>(null);
+  const historyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 데이터 로드
   useEffect(() => {
@@ -108,7 +115,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
   useEffect(() => {
     NotificationService.registerActionCallback((rewardAmount: number) => {
       const restActivity: ActivityRecord = {
-        id: `action_${Date.now()}`,
+        id: generateId('action_'),
         type: ActivityType.REST,
         durationMinutes: rewardAmount,
         timestamp: new Date(),
@@ -144,7 +151,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
 
           if (restMinutes > 0) {
             const autoRest: ActivityRecord = {
-              id: `idle_${Date.now()}`,
+              id: generateId('idle_'),
               type: ActivityType.REST,
               durationMinutes: restMinutes,
               timestamp: new Date(),
@@ -169,9 +176,10 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
   // 날짜 변경 체크 (자정에 데이터 초기화)
   useEffect(() => {
     const checkDate = setInterval(() => {
-      const today = new Date().toISOString().split('T')[0];
-      if (dailyData.date !== today) {
-        resetDailyData();
+      const today = getLocalDateString();
+      if (dailyData.date !== today && !resettingRef.current) {
+        resettingRef.current = true;
+        resetDailyData().finally(() => { resettingRef.current = false; });
       }
     }, 60000);
 
@@ -182,9 +190,39 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
   useEffect(() => {
     if (!isLoading) {
       updateFatigue();
-      saveData();
     }
   }, [dailyData.activities, dailyData.manualSliderValue, healthData, sedentaryEvents]);
+
+  // dailyData 변경 시 자동 저장 (fatigue 재계산 후 반영된 값으로 저장)
+  useEffect(() => {
+    if (!isLoading) {
+      const dataToSave = {
+        ...dailyData,
+        sedentaryEvents,
+        inputMode: settings.inputMode,
+      };
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave)).catch(error => {
+        if (__DEV__) console.error('Failed to save data:', error);
+      });
+    }
+  }, [dailyData, sedentaryEvents, settings.inputMode, isLoading]);
+
+  // 히스토리 디바운스 저장 (3초 후, 최신 dailyData ref 사용)
+  useEffect(() => {
+    if (isLoading) return;
+    if (historyTimerRef.current) {
+      clearTimeout(historyTimerRef.current);
+    }
+    historyTimerRef.current = setTimeout(() => {
+      const data = latestDailyDataRef.current ?? dailyData;
+      saveToHistory(data);
+    }, 3000);
+    return () => {
+      if (historyTimerRef.current) {
+        clearTimeout(historyTimerRef.current);
+      }
+    };
+  }, [dailyData.currentFatiguePercentage, dailyData.activities.length, isLoading]);
 
   // HealthService 초기화 (inputMode 변경 시)
   useEffect(() => {
@@ -220,7 +258,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
 
           // 자동 SITTING 활동 추가
           const autoActivity: ActivityRecord = {
-            id: `auto_${Date.now()}`,
+            id: generateId('auto_'),
             type: ActivityType.SITTING,
             durationMinutes: event.durationMinutes,
             timestamp: event.endTime,
@@ -317,7 +355,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
 
         if (
           !parsed ||
@@ -370,19 +408,6 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
     }
   };
 
-  const saveData = async () => {
-    try {
-      const dataToSave = {
-        ...dailyData,
-        sedentaryEvents,
-        inputMode: settings.inputMode,
-      };
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-    } catch (error) {
-      if (__DEV__) console.error('Failed to save data:', error);
-    }
-  };
-
   const saveToHistory = async (data: DailyFatigueData) => {
     const sleepActivities = data.activities.filter(
       a => a.type === ActivityType.SLEEP,
@@ -409,7 +434,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
     }
 
     const newData: DailyFatigueData = {
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateString(),
       activities: [],
       currentFatiguePercentage: 50,
     };
@@ -470,8 +495,8 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
         ...prev,
         currentFatiguePercentage: calculated,
       };
-      // 오늘 데이터를 히스토리에 업데이트
-      saveToHistory(updated);
+      // 최신 dailyData를 ref에 저장하여 히스토리 저장 시 사용
+      latestDailyDataRef.current = updated;
       return updated;
     });
   };
@@ -482,7 +507,7 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
     note?: string,
   ) => {
     const newActivity: ActivityRecord = {
-      id: Date.now().toString(),
+      id: generateId('act_'),
       type: activityType,
       durationMinutes,
       timestamp: new Date(),

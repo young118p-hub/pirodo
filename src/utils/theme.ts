@@ -157,31 +157,31 @@ export const TYPOGRAPHY = {
   title: {
     fontSize: 32,
     fontWeight: '700' as const,
-    color: COLORS.textPrimary,
+    lineHeight: 40,
   },
   subtitle: {
     fontSize: 14,
     fontWeight: '500' as const,
-    color: COLORS.textSecondary,
+    lineHeight: 20,
   },
   heading: {
     fontSize: 18,
     fontWeight: '600' as const,
-    color: COLORS.textPrimary,
+    lineHeight: 24,
   },
   body: {
     fontSize: 15,
     fontWeight: '400' as const,
-    color: COLORS.textPrimary,
+    lineHeight: 22,
   },
   caption: {
     fontSize: 12,
     fontWeight: '500' as const,
-    color: COLORS.textSecondary,
+    lineHeight: 16,
   },
   small: {
     fontSize: 11,
     fontWeight: '500' as const,
-    color: COLORS.textTertiary,
+    lineHeight: 14,
   },
 };

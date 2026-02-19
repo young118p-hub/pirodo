@@ -113,9 +113,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textTertiary,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
     marginBottom: 2,
   },
   percentage: {

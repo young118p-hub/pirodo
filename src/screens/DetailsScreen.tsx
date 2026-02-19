@@ -171,7 +171,7 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
                       )}
                     </View>
                     <TouchableOpacity
-                      style={styles.deleteButton}
+                      style={[styles.deleteButton, {backgroundColor: colors.fatigue.exhausted + '18'}]}
                       onPress={() =>
                         handleDeleteActivity(activity.id, item.info.displayName)
                       }
@@ -231,7 +231,7 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
                       )}
                     </View>
                     <TouchableOpacity
-                      style={styles.deleteButton}
+                      style={[styles.deleteButton, {backgroundColor: colors.fatigue.exhausted + '18'}]}
                       onPress={() =>
                         handleDeleteActivity(activity.id, item.info.displayName)
                       }
@@ -262,7 +262,7 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({navigation}) => {
         {/* 전체 삭제 버튼 */}
         {dailyData.activities.length > 0 && (
           <TouchableOpacity
-            style={styles.clearAllButton}
+            style={[styles.clearAllButton, {backgroundColor: colors.fatigue.exhausted + '18'}]}
             onPress={handleClearAll}
             activeOpacity={0.7}>
             <Text style={[styles.clearAllButtonText, {color: colors.fatigue.exhausted}]}>전체 삭제</Text>
@@ -388,7 +388,6 @@ const styles = StyleSheet.create({
   deleteButton: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: '#FFF0F0',
     borderRadius: 8,
   },
   deleteButtonText: {
@@ -421,7 +420,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   clearAllButton: {
-    backgroundColor: '#FFF0F0',
     paddingVertical: 15,
     borderRadius: RADIUS.small,
     alignItems: 'center',

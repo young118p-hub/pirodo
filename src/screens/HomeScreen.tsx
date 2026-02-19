@@ -3,7 +3,7 @@
  * V4 트렌디 UI
  */
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -46,11 +46,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
     dailyData.manualSliderValue ?? 50,
   );
 
+  // 데이터 로드 완료 후 슬라이더 싱크
+  useEffect(() => {
+    if (!isLoading) {
+      setSliderValue(dailyData.manualSliderValue ?? 50);
+    }
+  }, [isLoading]);
+
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.accent} />
-        <Text style={styles.loadingText}>로딩 중...</Text>
+      <View style={[styles.loadingContainer, {backgroundColor: colors.background}]}>
+        <ActivityIndicator size="large" color={colors.accent} />
+        <Text style={[styles.loadingText, {color: colors.textSecondary}]}>로딩 중...</Text>
       </View>
     );
   }
@@ -81,11 +88,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
     addActivity(type, duration);
   };
 
-  const dateString = new Date(dailyData.date).toLocaleDateString('ko-KR', {
+  const [dateY, dateM, dateD] = dailyData.date.split('-').map(Number);
+  const dateString = new Date(dateY, dateM - 1, dateD).toLocaleDateString('ko-KR', {
     month: 'long',
     day: 'numeric',
     weekday: 'short',
   });
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 6) return '새벽이에요';
+    if (hour < 12) return '좋은 아침이에요';
+    if (hour < 18) return '좋은 오후에요';
+    return '오늘도 수고했어요';
+  };
 
   return (
     <ScrollView
@@ -94,7 +110,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       showsVerticalScrollIndicator={false}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Text style={[styles.title, {color: colors.textPrimary}]}>피로도</Text>
+        <View>
+          <Text style={[styles.greeting, {color: colors.textSecondary}]}>{getGreeting()}</Text>
+          <Text style={[styles.title, {color: colors.textPrimary}]}>피로도</Text>
+        </View>
         <View style={[styles.datePill, {backgroundColor: colors.accentLight}]}>
           <Text style={[styles.dateText, {color: colors.accent}]}>{dateString}</Text>
         </View>
@@ -103,7 +122,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       {/* 슬라이더 (Manual 모드) */}
       {inputMode === InputMode.MANUAL && (
         <View style={[styles.sliderCard, {backgroundColor: colors.surface}, shadows.card]}>
-          <Text style={styles.sliderLabel}>지금 컨디션 어때?</Text>
+          <Text style={[styles.sliderLabel, {color: colors.textPrimary}]}>지금 컨디션 어때?</Text>
           <Slider
             style={styles.slider}
             minimumValue={0}
@@ -120,11 +139,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
             thumbTintColor={getSliderColor(sliderValue)}
           />
           <View style={styles.sliderLabels}>
-            <Text style={styles.sliderLabelText}>최고</Text>
+            <Text style={[styles.sliderLabelText, {color: colors.textTertiary}]}>최고</Text>
             <Text style={[styles.sliderValueText, {color: getSliderColor(sliderValue)}]}>
               {Math.round(sliderValue)}%
             </Text>
-            <Text style={styles.sliderLabelText}>탈진</Text>
+            <Text style={[styles.sliderLabelText, {color: colors.textTertiary}]}>탈진</Text>
           </View>
         </View>
       )}
@@ -133,8 +152,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       <View style={[styles.gaugeCard, {backgroundColor: colors.surface}, shadows.card]}>
         <FatigueCircle percentage={fatiguePercentage} size={240} />
         <Text style={[styles.fatigueMessage, {color: colors.textSecondary}]}>{fatigueMessage}</Text>
-        <View style={styles.sourceBadge}>
-          <Text style={styles.sourceBadgeText}>
+        <View style={[styles.sourceBadge, {backgroundColor: colors.accentLight}]}>
+          <Text style={[styles.sourceBadgeText, {color: colors.accent}]}>
             {INPUT_MODE_INFO[inputMode].emoji} {dataSourceLabel}
           </Text>
         </View>
@@ -142,34 +161,34 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
 
       {/* 핵심 지표 3개 */}
       <View style={styles.metricsRow}>
-        <View style={[styles.metricCard, {backgroundColor: COLORS.metricBg.steps}]}>
+        <View style={[styles.metricCard, {backgroundColor: colors.metricBg.steps}]}>
           <Text style={styles.metricIcon}>👟</Text>
-          <Text style={styles.metricValue}>
+          <Text style={[styles.metricValue, {color: colors.textPrimary}]} adjustsFontSizeToFit numberOfLines={1}>
             {inputMode === InputMode.MANUAL
               ? dailyData.activities.length
               : healthData?.stepCount?.toLocaleString() ?? '--'}
           </Text>
-          <Text style={styles.metricLabel}>
+          <Text style={[styles.metricLabel, {color: colors.textTertiary}]}>
             {inputMode === InputMode.MANUAL ? '활동' : '걸음'}
           </Text>
         </View>
 
-        <View style={[styles.metricCard, {backgroundColor: COLORS.metricBg.sleep}]}>
+        <View style={[styles.metricCard, {backgroundColor: colors.metricBg.sleep}]}>
           <Text style={styles.metricIcon}>🌙</Text>
-          <Text style={styles.metricValue}>{formatSleepHours()}</Text>
-          <Text style={styles.metricLabel}>수면</Text>
+          <Text style={[styles.metricValue, {color: colors.textPrimary}]} adjustsFontSizeToFit numberOfLines={1}>{formatSleepHours()}</Text>
+          <Text style={[styles.metricLabel, {color: colors.textTertiary}]}>수면</Text>
         </View>
 
-        <View style={[styles.metricCard, {backgroundColor: healthData?.heartRate != null ? COLORS.metricBg.heart : COLORS.metricBg.sitting}]}>
+        <View style={[styles.metricCard, {backgroundColor: healthData?.heartRate != null ? colors.metricBg.heart : colors.metricBg.sitting}]}>
           <Text style={styles.metricIcon}>
             {healthData?.heartRate != null ? '❤️' : '🪑'}
           </Text>
-          <Text style={styles.metricValue}>
+          <Text style={[styles.metricValue, {color: colors.textPrimary}]} adjustsFontSizeToFit numberOfLines={1}>
             {healthData?.heartRate != null
               ? `${healthData.heartRate}`
               : `${healthData?.sedentaryMinutes ?? 0}분`}
           </Text>
-          <Text style={styles.metricLabel}>
+          <Text style={[styles.metricLabel, {color: colors.textTertiary}]}>
             {healthData?.heartRate != null ? 'bpm' : '앉아있기'}
           </Text>
         </View>
@@ -178,7 +197,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       {/* 회복 추천 (액션 카드) */}
       {recoveryTips.length > 0 && (
         <View style={styles.tipsSection}>
-          <Text style={styles.tipsTitle}>회복 추천</Text>
+          <Text style={[styles.tipsTitle, {color: colors.textPrimary}]}>회복 추천</Text>
           {recoveryTips.map((tip, index) => (
             <RecoveryCard
               key={index}
@@ -191,7 +210,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
 
       {/* 퀵 버튼 */}
       <View style={styles.quickSection}>
-        <Text style={styles.quickTitle}>빠른 기록</Text>
+        <Text style={[styles.quickTitle, {color: colors.textPrimary}]}>빠른 기록</Text>
         <View style={styles.quickRow}>
           {[
             {type: ActivityType.CAFFEINE, icon: '☕', label: '커피'},
@@ -207,7 +226,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
               <View style={[styles.quickIconCircle, {backgroundColor: colors.surface}, shadows.subtle]}>
                 <Text style={styles.quickIcon}>{item.icon}</Text>
               </View>
-              <Text style={styles.quickLabel}>{item.label}</Text>
+              <Text style={[styles.quickLabel, {color: colors.textSecondary}]}>{item.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -251,7 +270,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
   },
 
   // 헤더
@@ -260,6 +278,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  greeting: {
+    ...TYPOGRAPHY.subtitle,
+    marginBottom: 2,
   },
   title: {
     ...TYPOGRAPHY.title,
@@ -383,11 +405,13 @@ const styles = StyleSheet.create({
   },
   quickButton: {
     alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   quickIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
@@ -410,27 +434,27 @@ const styles = StyleSheet.create({
   addButton: {
     flex: 1,
     backgroundColor: COLORS.accent,
-    borderRadius: RADIUS.small,
-    paddingVertical: 15,
+    borderRadius: RADIUS.card,
+    paddingVertical: 16,
     alignItems: 'center',
   },
   addButtonText: {
     color: COLORS.white,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   detailButton: {
     flex: 1,
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.small,
-    paddingVertical: 15,
+    borderRadius: RADIUS.card,
+    paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: COLORS.accent,
   },
   detailButtonText: {
     color: COLORS.accent,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
 });

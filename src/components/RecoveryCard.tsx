@@ -29,28 +29,27 @@ const RecoveryCard: React.FC<RecoveryCardProps> = ({tip, onQuickAdd}) => {
   }, []);
 
   useEffect(() => {
-    if (timerActive && remainingSeconds > 0) {
-      intervalRef.current = setInterval(() => {
-        setRemainingSeconds(prev => {
-          if (prev <= 1) {
-            if (intervalRef.current) {
-              clearInterval(intervalRef.current);
-            }
-            setTimerActive(false);
-            setTimerDone(true);
-            Vibration.vibrate([0, 500, 200, 500]);
-            return 0;
+    if (!timerActive) return;
+    intervalRef.current = setInterval(() => {
+      setRemainingSeconds(prev => {
+        if (prev <= 1) {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
           }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+          setTimerActive(false);
+          setTimerDone(true);
+          Vibration.vibrate([0, 500, 200, 500]);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [timerActive, remainingSeconds]);
+  }, [timerActive]);
 
   const startTimer = () => {
     if (!tip.action?.timerMinutes) return;
@@ -133,7 +132,7 @@ const RecoveryCard: React.FC<RecoveryCardProps> = ({tip, onQuickAdd}) => {
           style={[
             styles.actionButton,
             {backgroundColor: colors.accentLight},
-            timerActive && styles.actionButtonStop,
+            timerActive && {backgroundColor: colors.fatigue.exhausted + '18'},
             timerDone && !timerActive && {backgroundColor: colors.accentLight},
           ]}
           onPress={handleAction}
@@ -142,7 +141,7 @@ const RecoveryCard: React.FC<RecoveryCardProps> = ({tip, onQuickAdd}) => {
             style={[
               styles.actionButtonText,
               {color: colors.accent},
-              timerActive && styles.actionButtonTextStop,
+              timerActive && {color: colors.fatigue.exhausted},
             ]}>
             {timerActive
               ? '중지'
@@ -221,7 +220,7 @@ const styles = StyleSheet.create({
   actionButton: {
     marginTop: 12,
     backgroundColor: COLORS.accentLight,
-    borderRadius: RADIUS.small,
+    borderRadius: RADIUS.card,
     paddingVertical: 10,
     alignItems: 'center',
   },

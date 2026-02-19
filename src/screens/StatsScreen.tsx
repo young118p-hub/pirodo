@@ -394,8 +394,8 @@ const StatsScreen: React.FC = () => {
                 <View style={[
                   styles.trendBadge,
                   {backgroundColor: colors.accentLight},
-                  aiAnalysis.trend === 'improving' && styles.trendBadgeGood,
-                  aiAnalysis.trend === 'worsening' && styles.trendBadgeBad,
+                  aiAnalysis.trend === 'improving' && {backgroundColor: colors.fatigue.excellent + '20'},
+                  aiAnalysis.trend === 'worsening' && {backgroundColor: colors.fatigue.exhausted + '20'},
                 ]}>
                   <Text style={[styles.trendBadgeText, {color: colors.textPrimary}]}>
                     {aiAnalysis.trend === 'improving' ? '📈 개선' :
@@ -409,8 +409,8 @@ const StatsScreen: React.FC = () => {
                 <View key={idx} style={[
                   styles.aiInsightItem,
                   {backgroundColor: colors.background},
-                  insight.type === 'warning' && styles.aiInsightWarning,
-                  insight.type === 'positive' && styles.aiInsightPositive,
+                  insight.type === 'warning' && {backgroundColor: colors.fatigue.tired + '20'},
+                  insight.type === 'positive' && {backgroundColor: colors.fatigue.excellent + '20'},
                 ]}>
                   <Text style={styles.aiInsightEmoji}>{insight.emoji}</Text>
                   <View style={styles.aiInsightContent}>
@@ -592,12 +592,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  trendBadgeGood: {
-    backgroundColor: '#E8FFF6',
-  },
-  trendBadgeBad: {
-    backgroundColor: '#FFF0F0',
-  },
+  trendBadgeGood: {},
+  trendBadgeBad: {},
   trendBadgeText: {
     fontSize: 12,
     fontWeight: '600',
@@ -614,12 +610,8 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 8,
   },
-  aiInsightWarning: {
-    backgroundColor: '#FFF8EB',
-  },
-  aiInsightPositive: {
-    backgroundColor: '#F0FFF8',
-  },
+  aiInsightWarning: {},
+  aiInsightPositive: {},
   aiInsightEmoji: {
     fontSize: 22,
     marginRight: 12,

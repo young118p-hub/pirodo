@@ -69,7 +69,8 @@ export class PatternAnalyzer {
     // 요일별 평균 피로도
     const dayFatigues: Record<number, number[]> = {};
     for (const r of records) {
-      const dayOfWeek = new Date(r.date).getDay();
+      const [y, m, d] = r.date.split('-').map(Number);
+      const dayOfWeek = new Date(y, m - 1, d).getDay();
       if (!dayFatigues[dayOfWeek]) dayFatigues[dayOfWeek] = [];
       dayFatigues[dayOfWeek].push(r.fatiguePercentage);
     }
@@ -110,11 +111,13 @@ export class PatternAnalyzer {
 
     // 1. 주중 vs 주말 패턴
     const weekdayRecords = records.filter(r => {
-      const day = new Date(r.date).getDay();
+      const [ry, rm, rd] = r.date.split('-').map(Number);
+      const day = new Date(ry, rm - 1, rd).getDay();
       return day >= 1 && day <= 5;
     });
     const weekendRecords = records.filter(r => {
-      const day = new Date(r.date).getDay();
+      const [ry, rm, rd] = r.date.split('-').map(Number);
+      const day = new Date(ry, rm - 1, rd).getDay();
       return day === 0 || day === 6;
     });
 
