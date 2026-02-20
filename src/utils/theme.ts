@@ -25,6 +25,23 @@ export interface ThemeColors {
     heart: string;
     sitting: string;
   };
+  ppoom: {
+    charged: string;
+    normal: string;
+    tired: string;
+    discharged: string;
+  };
+  mission: {
+    easy: string;
+    normal: string;
+    challenge: string;
+  };
+  rarity: {
+    common: string;
+    rare: string;
+    epic: string;
+    legendary: string;
+  };
   accent: string;
   accentLight: string;
   white: string;
@@ -53,6 +70,23 @@ export const LIGHT_COLORS: ThemeColors = {
     heart: '#FFF0F0',
     sitting: '#FFF5EB',
   },
+  ppoom: {
+    charged: '#00C7BE',
+    normal: '#5856D6',
+    tired: '#FF9F0A',
+    discharged: '#FF453A',
+  },
+  mission: {
+    easy: '#E8FAF9',
+    normal: '#EEEDFC',
+    challenge: '#FFF5EB',
+  },
+  rarity: {
+    common: '#C7C7CC',
+    rare: '#5856D6',
+    epic: '#FF9F0A',
+    legendary: '#FF453A',
+  },
   accent: '#5856D6',
   accentLight: '#EEEDFC',
   white: '#FFFFFF',
@@ -80,6 +114,23 @@ export const DARK_COLORS: ThemeColors = {
     sleep: '#1E1A2E',
     heart: '#2E1A1A',
     sitting: '#2E2418',
+  },
+  ppoom: {
+    charged: '#00C7BE',
+    normal: '#7B7AE0',
+    tired: '#FFB340',
+    discharged: '#FF6961',
+  },
+  mission: {
+    easy: '#0D2E2C',
+    normal: '#1E1D3A',
+    challenge: '#2E2418',
+  },
+  rarity: {
+    common: '#636366',
+    rare: '#7B7AE0',
+    epic: '#FFB340',
+    legendary: '#FF6961',
   },
   accent: '#7B7AE0',
   accentLight: '#28274A',

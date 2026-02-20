@@ -196,3 +196,141 @@ export interface RecoveryAction {
   activityType?: ActivityType;
   activityDuration?: number;
 }
+
+// ============================================================
+// 뿜(PPOOM) 캐릭터 & 미션 시스템
+// ============================================================
+
+/**
+ * 뿜 캐릭터 상태 (피로도 기반)
+ */
+export enum PpoomState {
+  CHARGED = 'CHARGED',       // 0-20%: 충전 완료
+  GOOD = 'GOOD',             // 20-40%: 좋음
+  NORMAL = 'NORMAL',         // 40-60%: 보통
+  TIRED = 'TIRED',           // 60-80%: 피곤
+  DISCHARGED = 'DISCHARGED', // 80-100%: 방전
+}
+
+/**
+ * 미션 카테고리
+ */
+export enum MissionCategory {
+  WATER = 'WATER',
+  ACTIVITY = 'ACTIVITY',
+  SLEEP = 'SLEEP',
+  FOOD = 'FOOD',
+  MIND = 'MIND',
+  HABIT = 'HABIT',
+}
+
+/**
+ * 미션 난이도
+ */
+export enum MissionDifficulty {
+  EASY = 'EASY',
+  NORMAL = 'NORMAL',
+  CHALLENGE = 'CHALLENGE',
+}
+
+/**
+ * 미션 템플릿 (정적 데이터)
+ */
+export interface MissionTemplate {
+  id: string;
+  category: MissionCategory;
+  difficulty: MissionDifficulty;
+  title: string;
+  description: string;
+  emoji: string;
+  expReward: number; // 10~30
+}
+
+/**
+ * 일일 미션 (할당된 미션)
+ */
+export interface DailyMission {
+  templateId: string;
+  category: MissionCategory;
+  difficulty: MissionDifficulty;
+  title: string;
+  description: string;
+  emoji: string;
+  expReward: number;
+  completed: boolean;
+  completedAt?: string; // ISO timestamp
+}
+
+/**
+ * 일일 미션 데이터
+ */
+export interface DailyMissionData {
+  date: string; // YYYY-MM-DD
+  missions: DailyMission[];
+  allCompleted: boolean;
+}
+
+/**
+ * 미션 히스토리 레코드
+ */
+export interface MissionHistoryRecord {
+  date: string;
+  missions: DailyMission[];
+  allCompleted: boolean;
+  fatiguePercentage: number;
+}
+
+/**
+ * 스트릭 데이터
+ */
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  lastCompletedDate: string; // YYYY-MM-DD
+}
+
+/**
+ * 코스튬 해금 조건 타입
+ */
+export type CostumeUnlockCondition =
+  | { type: 'level'; level: number }
+  | { type: 'streak'; days: number }
+  | { type: 'missions'; count: number }
+  | { type: 'default' };
+
+/**
+ * 코스튬 희귀도
+ */
+export type CostumeRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+/**
+ * 코스튬 아이템
+ */
+export interface CostumeItem {
+  id: string;
+  name: string;
+  emoji: string; // 코스튬 표현 이모지
+  description: string;
+  rarity: CostumeRarity;
+  unlockCondition: CostumeUnlockCondition;
+}
+
+/**
+ * 뿜 캐릭터 데이터
+ */
+export interface PpoomCharacterData {
+  level: number;
+  exp: number;
+  equippedCostumeId: string | null;
+  unlockedCostumeIds: string[];
+}
+
+/**
+ * 뿜 통합 저장 구조
+ */
+export interface PpoomSaveData {
+  character: PpoomCharacterData;
+  streak: StreakData;
+  missionHistory: MissionHistoryRecord[];
+  currentMissions: DailyMissionData | null;
+}

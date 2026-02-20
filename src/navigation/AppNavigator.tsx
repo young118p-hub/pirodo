@@ -1,7 +1,7 @@
 /**
  * 앱 네비게이션 설정
- * Bottom Tab (홈, 통계, 설정) + Stack (모달/상세)
- * V4 트렌디 UI
+ * Bottom Tab (홈, 기록, 옷장, 마이) + Stack (모달/상세)
+ * V5 뿜 캐릭터 시스템
  */
 
 import React from 'react';
@@ -10,10 +10,11 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
+import RecordsScreen from '../screens/RecordsScreen';
+import ClosetScreen from '../screens/ClosetScreen';
+import MyScreen from '../screens/MyScreen';
 import AddActivityScreen from '../screens/AddActivityScreen';
 import DetailsScreen from '../screens/DetailsScreen';
-import SettingsScreen from '../screens/SettingsScreen';
-import StatsScreen from '../screens/StatsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import {useSettings} from '../contexts/SettingsContext';
 import {useTheme} from '../contexts/ThemeContext';
@@ -27,8 +28,9 @@ export type RootStackParamList = {
 
 export type TabParamList = {
   Home: undefined;
-  Stats: undefined;
-  Settings: undefined;
+  Records: undefined;
+  Closet: undefined;
+  My: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -78,24 +80,32 @@ const MainTabs: React.FC = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: '피로도',
-          tabBarIcon: ({focused, color}) => <TabIcon label="🔋" focused={focused} color={color} />,
+          tabBarLabel: '홈',
+          tabBarIcon: ({focused, color}) => <TabIcon label="🏠" focused={focused} color={color} />,
         }}
       />
       <Tab.Screen
-        name="Stats"
-        component={StatsScreen}
+        name="Records"
+        component={RecordsScreen}
         options={{
-          tabBarLabel: '통계',
-          tabBarIcon: ({focused, color}) => <TabIcon label="📊" focused={focused} color={color} />,
+          tabBarLabel: '기록',
+          tabBarIcon: ({focused, color}) => <TabIcon label="📅" focused={focused} color={color} />,
         }}
       />
       <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
+        name="Closet"
+        component={ClosetScreen}
         options={{
-          tabBarLabel: '설정',
-          tabBarIcon: ({focused, color}) => <TabIcon label="⚙️" focused={focused} color={color} />,
+          tabBarLabel: '옷장',
+          tabBarIcon: ({focused, color}) => <TabIcon label="👕" focused={focused} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="My"
+        component={MyScreen}
+        options={{
+          tabBarLabel: '마이',
+          tabBarIcon: ({focused, color}) => <TabIcon label="👤" focused={focused} color={color} />,
         }}
       />
     </Tab.Navigator>

@@ -7,7 +7,9 @@ import {StatusBar, SafeAreaView, StyleSheet} from 'react-native';
 import {ThemeProvider, useTheme} from './src/contexts/ThemeContext';
 import {SettingsProvider} from './src/contexts/SettingsContext';
 import {FatigueProvider} from './src/contexts/FatigueContext';
+import {PpoomProvider} from './src/contexts/PpoomContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import PpoomNotification from './src/components/PpoomNotification';
 
 const AppContent: React.FC = () => {
   const {colors, isDark} = useTheme();
@@ -19,6 +21,7 @@ const AppContent: React.FC = () => {
         backgroundColor={colors.background}
       />
       <AppNavigator />
+      <PpoomNotification />
     </SafeAreaView>
   );
 };
@@ -28,7 +31,9 @@ const App: React.FC = () => {
     <ThemeProvider>
       <SettingsProvider>
         <FatigueProvider>
-          <AppContent />
+          <PpoomProvider>
+            <AppContent />
+          </PpoomProvider>
         </FatigueProvider>
       </SettingsProvider>
     </ThemeProvider>
