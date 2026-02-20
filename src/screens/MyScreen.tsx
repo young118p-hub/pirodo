@@ -1,5 +1,5 @@
 /**
- * 마이 화면 - 뿜 프로필 + 설정 통합
+ * 설정 화면
  */
 
 import React, {useState, useEffect} from 'react';
@@ -14,14 +14,11 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
-import {usePpoom} from '../contexts/PpoomContext';
 import {InputMode} from '../types';
 import {INPUT_MODE_INFO} from '../utils/constants';
 import {useSettings} from '../contexts/SettingsContext';
 import {useTheme} from '../contexts/ThemeContext';
 import {BackupService} from '../services/BackupService';
-import {getRequiredExp} from '../constants/ppoomData';
-import ExpBar from '../components/ExpBar';
 import {COLORS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
 const THEME_OPTIONS = [
@@ -33,7 +30,6 @@ const THEME_OPTIONS = [
 const MyScreen: React.FC = () => {
   const {settings, updateSettings, setInputMode} = useSettings();
   const {themeMode, setThemeMode, colors, shadows} = useTheme();
-  const {character, streak, missionHistory} = usePpoom();
 
   const [dataSummary, setDataSummary] = useState({totalKeys: 0, historyDays: 0, settingsExist: false});
   const [importModalVisible, setImportModalVisible] = useState(false);
@@ -42,11 +38,6 @@ const MyScreen: React.FC = () => {
   useEffect(() => {
     BackupService.getDataSummary().then(setDataSummary);
   }, []);
-
-  const totalMissions = missionHistory.reduce(
-    (sum, record) => sum + record.missions.filter(m => m.completed).length,
-    0,
-  );
 
   const handleExport = async () => {
     const success = await BackupService.shareBackup();
@@ -94,55 +85,7 @@ const MyScreen: React.FC = () => {
       showsVerticalScrollIndicator={false}>
 
       {/* 헤더 */}
-      <Text style={[styles.pageTitle, {color: colors.textPrimary}]}>마이</Text>
-
-      {/* 뿜 프로필 카드 */}
-      <View style={[styles.profileCard, {backgroundColor: colors.surface}, shadows.card]}>
-        <View style={styles.profileHeader}>
-          <Text style={styles.profileEmoji}>🫧</Text>
-          <View style={styles.profileInfo}>
-            <Text style={[styles.profileName, {color: colors.textPrimary}]}>
-              뿜 Lv.{character.level}
-            </Text>
-            <Text style={[styles.profileSub, {color: colors.textSecondary}]}>
-              구름젤리 캐릭터
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.expBarArea}>
-          <ExpBar />
-        </View>
-
-        <View style={styles.profileStats}>
-          <View style={styles.profileStatItem}>
-            <Text style={[styles.profileStatValue, {color: colors.accent}]}>
-              {streak.currentStreak}일
-            </Text>
-            <Text style={[styles.profileStatLabel, {color: colors.textTertiary}]}>
-              현재 스트릭
-            </Text>
-          </View>
-          <View style={[styles.profileDivider, {backgroundColor: colors.divider}]} />
-          <View style={styles.profileStatItem}>
-            <Text style={[styles.profileStatValue, {color: colors.accent}]}>
-              {streak.longestStreak}일
-            </Text>
-            <Text style={[styles.profileStatLabel, {color: colors.textTertiary}]}>
-              최장 기록
-            </Text>
-          </View>
-          <View style={[styles.profileDivider, {backgroundColor: colors.divider}]} />
-          <View style={styles.profileStatItem}>
-            <Text style={[styles.profileStatValue, {color: colors.accent}]}>
-              {totalMissions}개
-            </Text>
-            <Text style={[styles.profileStatLabel, {color: colors.textTertiary}]}>
-              완료 미션
-            </Text>
-          </View>
-        </View>
-      </View>
+      <Text style={[styles.pageTitle, {color: colors.textPrimary}]}>설정</Text>
 
       {/* 측정 방식 */}
       <Text style={[styles.sectionTitle, {color: colors.textPrimary}]}>측정 방식</Text>
@@ -317,56 +260,6 @@ const styles = StyleSheet.create({
   pageTitle: {
     ...TYPOGRAPHY.title,
     marginBottom: 20,
-  },
-
-  // 프로필 카드
-  profileCard: {
-    borderRadius: RADIUS.cardLarge,
-    padding: SPACING.cardPadding,
-    marginBottom: 24,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  profileEmoji: {
-    fontSize: 40,
-    marginRight: 14,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  profileSub: {
-    ...TYPOGRAPHY.caption,
-    marginTop: 2,
-  },
-  expBarArea: {
-    marginBottom: 16,
-  },
-  profileStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  profileStatItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  profileStatValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  profileStatLabel: {
-    ...TYPOGRAPHY.small,
-  },
-  profileDivider: {
-    width: 1,
-    height: 28,
   },
 
   // 섹션

@@ -1,7 +1,6 @@
 /**
  * 앱 네비게이션 설정
- * Bottom Tab (홈, 기록, 옷장, 마이) + Stack (모달/상세)
- * V5 뿜 캐릭터 시스템
+ * Bottom Tab (홈, 기록, 설정) + Stack (모달/상세)
  */
 
 import React from 'react';
@@ -11,7 +10,6 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import RecordsScreen from '../screens/RecordsScreen';
-import ClosetScreen from '../screens/ClosetScreen';
 import MyScreen from '../screens/MyScreen';
 import AddActivityScreen from '../screens/AddActivityScreen';
 import DetailsScreen from '../screens/DetailsScreen';
@@ -29,8 +27,7 @@ export type RootStackParamList = {
 export type TabParamList = {
   Home: undefined;
   Records: undefined;
-  Closet: undefined;
-  My: undefined;
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -93,19 +90,11 @@ const MainTabs: React.FC = () => {
         }}
       />
       <Tab.Screen
-        name="Closet"
-        component={ClosetScreen}
-        options={{
-          tabBarLabel: '옷장',
-          tabBarIcon: ({focused, color}) => <TabIcon label="👕" focused={focused} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="My"
+        name="Settings"
         component={MyScreen}
         options={{
-          tabBarLabel: '마이',
-          tabBarIcon: ({focused, color}) => <TabIcon label="👤" focused={focused} color={color} />,
+          tabBarLabel: '설정',
+          tabBarIcon: ({focused, color}) => <TabIcon label="⚙️" focused={focused} color={color} />,
         }}
       />
     </Tab.Navigator>
