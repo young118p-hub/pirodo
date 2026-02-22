@@ -2,7 +2,7 @@
  * 설정 화면
  */
 
-import React, {useState, useEffect} from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,9 @@ import {
   ScrollView,
   Switch,
   Alert,
-  TextInput,
-  Modal,
+  NativeModules,
 } from 'react-native';
 import {InputMode} from '../types';
-import {INPUT_MODE_INFO} from '../utils/constants';
 import {useSettings} from '../contexts/SettingsContext';
 import {useTheme} from '../contexts/ThemeContext';
 import {BackupService} from '../services/BackupService';
@@ -31,34 +29,7 @@ const MyScreen: React.FC = () => {
   const {settings, updateSettings, setInputMode} = useSettings();
   const {themeMode, setThemeMode, colors, shadows} = useTheme();
 
-  const [dataSummary, setDataSummary] = useState({totalKeys: 0, historyDays: 0, settingsExist: false});
-  const [importModalVisible, setImportModalVisible] = useState(false);
-  const [importText, setImportText] = useState('');
-
-  useEffect(() => {
-    BackupService.getDataSummary().then(setDataSummary);
-  }, []);
-
-  const handleExport = async () => {
-    const success = await BackupService.shareBackup();
-    if (!success) {
-      Alert.alert('오류', '백업 내보내기에 실패했습니다.');
-    }
-  };
-
-  const handleImport = async () => {
-    if (!importText.trim()) {
-      Alert.alert('오류', 'JSON 데이터를 입력해주세요.');
-      return;
-    }
-    const result = await BackupService.importData(importText);
-    setImportModalVisible(false);
-    setImportText('');
-    Alert.alert(result.success ? '복원 완료' : '오류', result.message);
-    if (result.success) {
-      BackupService.getDataSummary().then(setDataSummary);
-    }
-  };
+  const isAuto = settings.inputMode === InputMode.AUTO;
 
   const handleReset = () => {
     Alert.alert(
@@ -71,7 +42,8 @@ const MyScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             await BackupService.clearAllData();
-            Alert.alert('완료', '모든 데이터가 초기화되었습니다. 앱을 재시작하세요.');
+            // 앱 자동 재시작으로 메모리 상태도 초기화
+            NativeModules.DevSettings?.reload?.();
           },
         },
       ],
@@ -89,40 +61,26 @@ const MyScreen: React.FC = () => {
 
       {/* 측정 방식 */}
       <Text style={[styles.sectionTitle, {color: colors.textPrimary}]}>측정 방식</Text>
-      {[InputMode.WATCH, InputMode.PHONE, InputMode.MANUAL].map(mode => {
-        const info = INPUT_MODE_INFO[mode];
-        const isSelected = settings.inputMode === mode;
-        return (
-          <TouchableOpacity
-            key={mode}
-            style={[
-              styles.modeCard,
-              {backgroundColor: colors.surface},
-              shadows.card,
-              isSelected && {backgroundColor: colors.accentLight},
-            ]}
-            onPress={() => setInputMode(mode)}
-            activeOpacity={0.7}>
-            {isSelected && <View style={[styles.modeColorBar, {backgroundColor: colors.accent}]} />}
-            <View style={styles.modeBody}>
-              <Text style={styles.modeEmoji}>{info.emoji}</Text>
-              <View style={styles.modeText}>
-                <Text style={[styles.modeName, {color: isSelected ? colors.accent : colors.textPrimary}]}>
-                  {info.displayName}
-                </Text>
-                <Text style={[styles.modeDesc, {color: colors.textSecondary}]} numberOfLines={1}>
-                  {info.description}
-                </Text>
-              </View>
-              {isSelected && (
-                <View style={[styles.activeBadge, {backgroundColor: colors.accent}]}>
-                  <Text style={styles.activeBadgeText}>사용 중</Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
-        );
-      })}
+      <View style={[styles.settingCard, {backgroundColor: colors.surface}, shadows.card]}>
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, {color: colors.textPrimary}]}>자동 측정</Text>
+            <Text style={[styles.settingDesc, {color: colors.textSecondary}]}>
+              {isAuto
+                ? '워치 + 폰 건강 데이터를 자동 수집합니다'
+                : '슬라이더로 직접 컨디션을 입력합니다'}
+            </Text>
+          </View>
+          <Switch
+            value={isAuto}
+            onValueChange={(value) =>
+              setInputMode(value ? InputMode.AUTO : InputMode.MANUAL)
+            }
+            trackColor={{false: colors.divider, true: colors.accentLight}}
+            thumbColor={isAuto ? colors.accent : colors.textTertiary}
+          />
+        </View>
+      </View>
 
       {/* 테마 */}
       <Text style={[styles.sectionTitle, {marginTop: 24, color: colors.textPrimary}]}>화면 테마</Text>
@@ -150,7 +108,7 @@ const MyScreen: React.FC = () => {
       </View>
 
       {/* 자동 감지 설정 */}
-      {settings.inputMode !== InputMode.MANUAL && (
+      {isAuto && (
         <>
           <Text style={[styles.sectionTitle, {marginTop: 24, color: colors.textPrimary}]}>자동 감지</Text>
           <View style={[styles.settingCard, {backgroundColor: colors.surface}, shadows.card]}>
@@ -189,61 +147,13 @@ const MyScreen: React.FC = () => {
 
       {/* 데이터 관리 */}
       <Text style={[styles.sectionTitle, {marginTop: 24, color: colors.textPrimary}]}>데이터 관리</Text>
-      <Text style={[styles.sectionSub, {color: colors.textSecondary}]}>
-        {dataSummary.historyDays}일치 기록 보관 중
-      </Text>
-
       <View style={[styles.settingCard, {backgroundColor: colors.surface}, shadows.card]}>
-        <TouchableOpacity style={styles.settingRow} onPress={handleExport} activeOpacity={0.6}>
-          <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, {color: colors.textPrimary}]}>📤 백업 내보내기</Text>
-          </View>
-        </TouchableOpacity>
-        <View style={[styles.settingDivider, {backgroundColor: colors.divider}]} />
-        <TouchableOpacity style={styles.settingRow} onPress={() => setImportModalVisible(true)} activeOpacity={0.6}>
-          <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, {color: colors.textPrimary}]}>📥 백업 복원</Text>
-          </View>
-        </TouchableOpacity>
-        <View style={[styles.settingDivider, {backgroundColor: colors.divider}]} />
         <TouchableOpacity style={styles.settingRow} onPress={handleReset} activeOpacity={0.6}>
           <View style={styles.settingInfo}>
             <Text style={[styles.settingLabel, {color: colors.fatigue.exhausted}]}>🗑️ 데이터 초기화</Text>
           </View>
         </TouchableOpacity>
       </View>
-
-      {/* 복원 모달 */}
-      <Modal visible={importModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, {backgroundColor: colors.surface}]}>
-            <Text style={[styles.modalTitle, {color: colors.textPrimary}]}>백업 복원</Text>
-            <TextInput
-              style={[styles.importInput, {backgroundColor: colors.background, color: colors.textPrimary}]}
-              multiline
-              placeholder='{"version":1,"appName":"pirodo",...}'
-              placeholderTextColor={colors.textTertiary}
-              value={importText}
-              onChangeText={setImportText}
-              textAlignVertical="top"
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalBtn, {backgroundColor: colors.background}]}
-                onPress={() => {setImportModalVisible(false); setImportText('');}}
-                activeOpacity={0.7}>
-                <Text style={[styles.modalBtnText, {color: colors.textSecondary}]}>취소</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, {backgroundColor: colors.accent}]}
-                onPress={handleImport}
-                activeOpacity={0.7}>
-                <Text style={[styles.modalBtnText, {color: '#FFF'}]}>복원</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </ScrollView>
   );
 };
@@ -267,53 +177,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
-  },
-  sectionSub: {
-    ...TYPOGRAPHY.caption,
-    marginBottom: 12,
-    marginTop: -8,
-  },
-
-  // 모드 카드
-  modeCard: {
-    borderRadius: RADIUS.card,
-    marginBottom: 10,
-    overflow: 'hidden',
-    flexDirection: 'row',
-  },
-  modeColorBar: {
-    width: 4,
-  },
-  modeBody: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    gap: 10,
-  },
-  modeEmoji: {
-    fontSize: 24,
-  },
-  modeText: {
-    flex: 1,
-  },
-  modeName: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  modeDesc: {
-    ...TYPOGRAPHY.caption,
-    marginTop: 1,
-  },
-  activeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: RADIUS.pill,
-  },
-  activeBadgeText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: '600',
   },
 
   // 테마
@@ -365,44 +228,6 @@ const styles = StyleSheet.create({
   settingDesc: {
     ...TYPOGRAPHY.caption,
     marginTop: 2,
-  },
-
-  // 모달
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    borderRadius: RADIUS.card,
-    padding: SPACING.cardPadding,
-  },
-  modalTitle: {
-    ...TYPOGRAPHY.heading,
-    marginBottom: 12,
-  },
-  importInput: {
-    borderRadius: RADIUS.small,
-    padding: 12,
-    minHeight: 120,
-    fontSize: 12,
-    fontFamily: 'monospace',
-    marginBottom: 14,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  modalBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: RADIUS.small,
-    alignItems: 'center',
-  },
-  modalBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
 });
 

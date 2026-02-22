@@ -2,8 +2,9 @@
  * 피로도 앱 메인 파일
  */
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import {StatusBar, SafeAreaView, StyleSheet} from 'react-native';
+import {NotificationService} from './src/services/NotificationService';
 import {ThemeProvider, useTheme} from './src/contexts/ThemeContext';
 import {SettingsProvider} from './src/contexts/SettingsContext';
 import {FatigueProvider} from './src/contexts/FatigueContext';
@@ -13,6 +14,10 @@ import PpoomNotification from './src/components/PpoomNotification';
 
 const AppContent: React.FC = () => {
   const {colors, isDark} = useTheme();
+
+  useEffect(() => {
+    NotificationService.requestPermission();
+  }, []);
 
   return (
     <SafeAreaView style={[styles.container, {backgroundColor: colors.background}]}>
