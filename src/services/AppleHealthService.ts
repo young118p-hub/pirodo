@@ -1,20 +1,9 @@
 /**
- * AppleHealthService - iOS HealthKit 연동
- *
- * react-native-health 라이브러리를 통해
- * Apple Watch / iPhone 건강 데이터를 읽어옴
- *
- * 설치 필요: npm install react-native-health
+ * AppleHealthService - iOS HealthKit 연동 (미구현)
  */
 
 import {IHealthService} from './HealthService';
-import {SleepData, DataSource} from '../types';
-
-// react-native-health가 설치되면 아래 import 활성화
-// import AppleHealthKit, {
-//   HealthKitPermissions,
-//   HealthValue,
-// } from 'react-native-health';
+import {SleepData} from '../types';
 
 export class AppleHealthService implements IHealthService {
   private initialized = false;

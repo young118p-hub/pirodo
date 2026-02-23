@@ -1,3 +1,7 @@
+# Expo (CNG - Continuous Native Generation)
+android/
+ios/
+
 # OSX
 .DS_Store
 
@@ -54,6 +58,11 @@ yarn-error.log
 *.swo
 *~
 .#*
+
+# Credentials
+credentials.json
+*.keystore
+play-store-key.json
 
 # Environment
 .env

@@ -1,4 +1,38 @@
 {
-  "name": "pirodo",
-  "displayName": "피로도"
+  "expo": {
+    "name": "피로도",
+    "slug": "pirodo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": [
+      "android"
+    ],
+    "android": {
+      "package": "com.pirodo",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE"
+      ]
+    },
+    "plugins": [
+      "./plugins/withPageAlignment",
+      "./plugins/withNotifee",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "93edb146-407b-4dcc-9cda-80dfa3a5f5f5"
+      }
+    },
+    "owner": "edenqw1"
+  }
 }

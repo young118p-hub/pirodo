@@ -1,23 +1,9 @@
 /**
- * GoogleFitService - Android Health Connect 연동
- *
- * react-native-health-connect 라이브러리를 통해
- * Google Fit / Samsung Health / Galaxy Watch 데이터를 읽어옴
- *
- * 설치 필요: npm install react-native-health-connect
+ * GoogleFitService - Android Health Connect 연동 (미구현)
  */
 
 import {IHealthService} from './HealthService';
-import {SleepData, DataSource} from '../types';
-
-// react-native-health-connect가 설치되면 아래 import 활성화
-// import {
-//   initialize,
-//   requestPermission,
-//   readRecords,
-//   getSdkStatus,
-//   SdkAvailabilityStatus,
-// } from 'react-native-health-connect';
+import {SleepData} from '../types';
 
 export class GoogleFitService implements IHealthService {
   private initialized = false;
