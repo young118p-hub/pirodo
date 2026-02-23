@@ -1,6 +1,7 @@
 /**
  * 로컬 푸시 알림 서비스 (Notifee 기반)
- * 앱이 포그라운드/백그라운드/종료 상태 모두에서 알림 표시
+ * 앱이 포그라운드/백그라운드 상태에서 알림 표시
+ * 뿜 캐릭터 이미지 + 피로도 수치 포함
  * "했어요!" 버튼으로 피로도 감소 콜백 지원
  */
 
@@ -10,6 +11,8 @@ import notifee, {
   EventType,
   Event as NotifeeEvent,
 } from '@notifee/react-native';
+import {PpoomState} from '../types';
+import {getPpoomStateFromFatigue} from '../constants/ppoomData';
 import {
   getFatigueExcellentNotification,
   getFatigueGoodNotification,
@@ -40,6 +43,15 @@ type NotificationType =
 
 const CHANNEL_ID = 'pirodo_fatigue';
 
+// 뿜 상태 → Android drawable 리소스 매핑
+const PPOOM_DRAWABLE: Record<PpoomState, string> = {
+  [PpoomState.CHARGED]: 'ppoom_charged',
+  [PpoomState.GOOD]: 'ppoom_normal',
+  [PpoomState.NORMAL]: 'ppoom_default',
+  [PpoomState.TIRED]: 'ppoom_tired',
+  [PpoomState.DISCHARGED]: 'ppoom_discharged',
+};
+
 // 알림 액션 콜백 (FatigueContext에서 등록)
 type ActionCallback = (rewardAmount: number) => void;
 
@@ -55,6 +67,14 @@ class NotificationServiceImpl {
 
   private onActionDone: ActionCallback | null = null;
   private channelCreated = false;
+  private currentFatigue = 50;
+
+  /**
+   * 현재 피로도 업데이트 (알림 발송 시 뿜 상태 결정에 사용)
+   */
+  updateFatiguePercentage(percentage: number): void {
+    this.currentFatigue = percentage;
+  }
 
   /**
    * Android 알림 채널 생성
@@ -71,7 +91,7 @@ class NotificationServiceImpl {
   }
 
   /**
-   * 포그라운드 이벤트 리스너 등록 (App 내에서 호출)
+   * 포그라운드 이벤트 리스너 등록
    */
   setupForegroundListener(): () => void {
     return notifee.onForegroundEvent(({type, detail}: NotifeeEvent) => {
@@ -83,7 +103,6 @@ class NotificationServiceImpl {
             this.onActionDone(reward);
           }
         }
-        // 알림 닫기
         if (detail.notification?.id) {
           notifee.cancelNotification(detail.notification.id);
         }
@@ -103,9 +122,7 @@ class NotificationServiceImpl {
    */
   async requestPermission(): Promise<boolean> {
     const settings = await notifee.requestPermission();
-    return (
-      settings.authorizationStatus >= 1 // AUTHORIZED or PROVISIONAL
-    );
+    return settings.authorizationStatus >= 1;
   }
 
   /**
@@ -118,7 +135,7 @@ class NotificationServiceImpl {
   }
 
   /**
-   * 알림 발송
+   * 알림 발송 (뿜 캐릭터 + 피로도 수치 포함)
    */
   private async sendNotification(
     type: NotificationType,
@@ -132,16 +149,24 @@ class NotificationServiceImpl {
     await this.ensureChannel();
 
     const hasReward = !!ACTION_REWARDS[type];
+    const ppoomState = getPpoomStateFromFatigue(this.currentFatigue);
+    const ppoomDrawable = PPOOM_DRAWABLE[ppoomState];
+    const pct = Math.round(this.currentFatigue);
 
     await notifee.displayNotification({
       title,
+      subtitle: `피로도 ${pct}%`,
       body,
       data: {type},
       android: {
         channelId: CHANNEL_ID,
         smallIcon: 'ic_launcher',
+        largeIcon: ppoomDrawable,
         pressAction: {id: 'default'},
-        style: {type: AndroidStyle.BIGTEXT, text: body},
+        style: {
+          type: AndroidStyle.BIGPICTURE,
+          picture: ppoomDrawable,
+        },
         actions: hasReward
           ? [
               {
@@ -151,9 +176,9 @@ class NotificationServiceImpl {
             ]
           : undefined,
       },
-      ios: {
-        categoryId: hasReward ? 'pirodo_action' : undefined,
-      },
+      ios: hasReward
+        ? {categoryId: 'pirodo_action'}
+        : {},
     });
   }
 
@@ -161,6 +186,7 @@ class NotificationServiceImpl {
    * 피로도 기반 알림 체크
    */
   checkFatigueAlert(percentage: number): void {
+    this.currentFatigue = percentage;
     const pct = Math.round(percentage);
 
     if (pct <= 25) {

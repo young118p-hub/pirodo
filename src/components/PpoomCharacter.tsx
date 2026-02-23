@@ -24,20 +24,20 @@ const PPOOM_STATE_IMAGES: Record<PpoomState, ImageSourcePropType> = {
 const HEART_EMOJIS = ['❤️', '💕', '💖', '💗', '🩷'];
 
 interface Props {
-  /** 최대 크기 (레벨 MAX일 때). 레벨 1이면 이것의 50% */
+  /** 최대 크기 (레벨 MAX일 때). 레벨 1이면 이것의 35% */
   maxSize?: number;
   onPress?: () => void;
 }
 
 /**
- * 레벨 → 크기 비율 (0.5 ~ 1.0)
- * sqrt 곡선으로 초반에 쑥쑥, 후반에 천천히
+ * 레벨 → 크기 비율 (0.35 ~ 1.0)
+ * pow(0.7) 곡선으로 초반 성장 체감 + 후반에도 눈에 띄는 차이
  */
 function getGrowthRatio(level: number): number {
-  const MIN_RATIO = 0.5;
+  const MIN_RATIO = 0.35;
   const MAX_RATIO = 1.0;
   const t = Math.min((level - 1) / (MAX_LEVEL - 1), 1);
-  const curved = Math.sqrt(t);
+  const curved = Math.pow(t, 0.7);
   return MIN_RATIO + curved * (MAX_RATIO - MIN_RATIO);
 }
 

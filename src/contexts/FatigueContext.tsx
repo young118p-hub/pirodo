@@ -481,7 +481,8 @@ export const FatigueProvider: React.FC<{children: ReactNode}> = ({children}) => 
     setFatigueMessage(stats.fatigueMessage);
     setRecommendation(stats.recommendation);
 
-    // 알림 체크
+    // 알림 체크 (뿜 캐릭터 이미지 + 피로도 수치 포함)
+    NotificationService.updateFatiguePercentage(calculated);
     if (settings.enableNotifications) {
       NotificationService.checkFatigueAlert(calculated);
 

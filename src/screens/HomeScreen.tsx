@@ -14,11 +14,13 @@ import {
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import {useFatigue} from '../contexts/FatigueContext';
-import FatigueCircle from '../components/FatigueCircle';
 import {InputMode} from '../types';
 import {ActivityType} from '../types';
 import {getRecoveryTips} from '../utils/recoveryEngine';
 import RecoveryCard from '../components/RecoveryCard';
+import PpoomCharacter from '../components/PpoomCharacter';
+import PpoomDialogue from '../components/PpoomDialogue';
+import {usePpoom} from '../contexts/PpoomContext';
 import {useTheme} from '../contexts/ThemeContext';
 import {COLORS, SHADOWS, SPACING, RADIUS, TYPOGRAPHY} from '../utils/theme';
 
@@ -28,6 +30,7 @@ interface HomeScreenProps {
 
 const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
   const {colors, shadows} = useTheme();
+  const {dialogue, refreshDialogue} = usePpoom();
   const {
     fatiguePercentage,
     fatigueMessage,
@@ -59,12 +62,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
     );
   }
 
-  const getSliderColor = (value: number) => {
+  const getFatigueColor = (value: number) => {
     if (value <= 25) return COLORS.fatigue.excellent;
     if (value <= 50) return COLORS.fatigue.good;
     if (value <= 75) return COLORS.fatigue.tired;
     return COLORS.fatigue.exhausted;
   };
+
+  const getSliderColor = getFatigueColor;
 
   const formatSleepHours = () => {
     const sleep = healthData?.sleepData ?? healthData?.estimatedSleepData;
@@ -145,10 +150,34 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
         </View>
       )}
 
-      {/* 메인 게이지 카드 */}
-      <View style={[styles.gaugeCard, {backgroundColor: colors.surface}, shadows.card]}>
-        <FatigueCircle percentage={fatiguePercentage} size={240} />
-        <Text style={[styles.fatigueMessage, {color: colors.textSecondary}]}>{fatigueMessage}</Text>
+      {/* 피로도 프로그레스 바 */}
+      <View style={[styles.fatigueBarCard, {backgroundColor: colors.surface}, shadows.card]}>
+        <View style={styles.fatigueBarHeader}>
+          <Text style={[styles.fatigueBarLabel, {color: colors.textSecondary}]}>피로도</Text>
+          <Text style={[styles.fatigueBarValue, {color: getFatigueColor(fatiguePercentage)}]}>
+            {Math.round(fatiguePercentage)}%
+          </Text>
+        </View>
+        <View style={[styles.fatigueBarTrack, {backgroundColor: colors.gaugeBackground}]}>
+          <View
+            style={[
+              styles.fatigueBarFill,
+              {
+                width: `${Math.min(fatiguePercentage, 100)}%`,
+                backgroundColor: getFatigueColor(fatiguePercentage),
+              },
+            ]}
+          />
+        </View>
+        <Text style={[styles.fatigueBarMessage, {color: colors.textTertiary}]}>{fatigueMessage}</Text>
+      </View>
+
+      {/* 뿜 캐릭터 */}
+      <View style={styles.ppoomSection}>
+        <PpoomCharacter maxSize={200} />
+        <View style={styles.dialogueWrap}>
+          <PpoomDialogue text={dialogue} onTap={refreshDialogue} />
+        </View>
       </View>
 
       {/* 핵심 지표 3개 */}
@@ -320,20 +349,50 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // 메인 게이지 카드
-  gaugeCard: {
+  // 피로도 프로그레스 바
+  fatigueBarCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.cardLarge,
-    padding: 28,
-    alignItems: 'center',
+    borderRadius: RADIUS.card,
+    padding: SPACING.cardPadding,
     marginBottom: SPACING.sectionGap,
     ...SHADOWS.card,
   },
-  fatigueMessage: {
+  fatigueBarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  fatigueBarLabel: {
     ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  fatigueBarValue: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  fatigueBarTrack: {
+    height: 10,
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  fatigueBarFill: {
+    height: '100%',
+    borderRadius: 5,
+  },
+  fatigueBarMessage: {
+    ...TYPOGRAPHY.caption,
+    marginTop: 8,
+  },
+
+  // 뿜 캐릭터
+  ppoomSection: {
+    alignItems: 'center',
+    marginBottom: SPACING.sectionGap,
+  },
+  dialogueWrap: {
     marginTop: 12,
-    textAlign: 'center',
+    width: '100%',
   },
   // 핵심 지표
   metricsRow: {
